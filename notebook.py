@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from gi.repository import Gtk, Pango
+from gi.repository import Gdk, Gtk, Pango
 
 class TextViewWindow(Gtk.Window):
 
@@ -14,6 +14,9 @@ class TextViewWindow(Gtk.Window):
 
         self.create_textview()
         self.create_toolbar()
+
+        self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+        self.connect('key-press-event', self.on_key_press_event)
 
     def create_toolbar(self):
         toolbar = Gtk.Toolbar()
@@ -156,6 +159,31 @@ class TextViewWindow(Gtk.Window):
             dialog.destroy()
 
         dialog.destroy()
+
+    def on_key_press_event(self, window, event):
+        key = Gdk.keyval_name(event.keyval)
+
+        # debug string :
+        #print(key + str(event.state))
+
+        if event.state & Gdk.ModifierType.CONTROL_MASK and key in ('o', 's', 'v'):
+            if key == 'o':
+                self.on_open_clicked(None)
+            elif key == 's':
+                self.on_save_clicked(None)
+            elif key == 'v':
+                pixbuf = self.clipboard.wait_for_image()
+                if pixbuf != None:
+                    mark = self.textbuffer.get_mark('insert')
+                    cur_iter = self.textbuffer.get_iter_at_mark(mark)
+                    self.textbuffer.insert_pixbuf(cur_iter, pixbuf)
+                else:
+                    return False
+
+            #print ('event catched')
+            return True
+
+        return False
 
 win = TextViewWindow()
 win.connect("delete-event", Gtk.main_quit)

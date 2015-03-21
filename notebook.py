@@ -2,24 +2,6 @@
 
 from gi.repository import Gtk, Pango
 
-class SearchDialog(Gtk.Dialog):
-
-    def __init__(self, parent):
-        Gtk.Dialog.__init__(self, "Search", parent,
-            Gtk.DialogFlags.MODAL, buttons=(
-            Gtk.STOCK_FIND, Gtk.ResponseType.OK,
-            Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL))
-
-        box = self.get_content_area()
-
-        label = Gtk.Label("Insert text you want to search for:")
-        box.add(label)
-
-        self.entry = Gtk.Entry()
-        box.add(self.entry)
-
-        self.show_all()
-
 class TextViewWindow(Gtk.Window):
 
     def __init__(self):
@@ -87,10 +69,6 @@ class TextViewWindow(Gtk.Window):
 
         toolbar.insert(Gtk.SeparatorToolItem(), 10)
 
-        button_search = Gtk.ToolButton.new_from_stock(Gtk.STOCK_FIND)
-        button_search.connect("clicked", self.on_search_clicked)
-        toolbar.insert(button_search, 11)
-
     def create_textview(self):
         scrolledwindow = Gtk.ScrolledWindow()
         scrolledwindow.set_hexpand(True)
@@ -111,8 +89,6 @@ class TextViewWindow(Gtk.Window):
             style=Pango.Style.ITALIC)
         self.tag_underline = self.textbuffer.create_tag("underline",
             underline=Pango.Underline.SINGLE)
-        self.tag_found = self.textbuffer.create_tag("found",
-            background="yellow")
 
     def on_button_clicked(self, widget, tag):
         bounds = self.textbuffer.get_selection_bounds()
@@ -127,28 +103,6 @@ class TextViewWindow(Gtk.Window):
 
     def on_justify_toggled(self, widget, justification):
         self.textview.set_justification(justification)
-
-    def on_search_clicked(self, widget):
-        dialog = SearchDialog(self)
-        response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-            cursor_mark = self.textbuffer.get_insert()
-            start = self.textbuffer.get_iter_at_mark(cursor_mark)
-            if start.get_offset() == self.textbuffer.get_char_count():
-                start = self.textbuffer.get_start_iter()
-
-            self.search_and_mark(dialog.entry.get_text(), start)
-
-        dialog.destroy()
-
-    def search_and_mark(self, text, start):
-        end = self.textbuffer.get_end_iter()
-        match = start.forward_search(text, 0, end)
-
-        if match != None:
-            match_start, match_end = match
-            self.textbuffer.apply_tag(self.tag_found, match_start, match_end)
-            self.search_and_mark(text, match_end)
 
 win = TextViewWindow()
 win.connect("delete-event", Gtk.main_quit)

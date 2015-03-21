@@ -102,9 +102,10 @@ class TextViewWindow(Gtk.Window):
             self.textbuffer.apply_tag(tag, start, end)
 
     def on_clear_clicked(self, widget):
-        start = self.textbuffer.get_start_iter()
-        end = self.textbuffer.get_end_iter()
-        self.textbuffer.remove_all_tags(start, end)
+        bounds = self.textbuffer.get_selection_bounds()
+        if len(bounds) != 0:
+            start, end = bounds
+            self.textbuffer.remove_all_tags(start, end)
 
     def on_justify_toggled(self, widget, justification):
         self.textview.set_justification(justification)

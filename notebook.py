@@ -32,7 +32,6 @@ class TextViewWindow(Gtk.Window):
 
         self.create_textview()
         self.create_toolbar()
-        self.create_buttons()
 
     def create_toolbar(self):
         toolbar = Gtk.Toolbar()
@@ -99,6 +98,7 @@ class TextViewWindow(Gtk.Window):
         self.grid.attach(scrolledwindow, 0, 1, 3, 1)
 
         self.textview = Gtk.TextView()
+        self.textview.set_wrap_mode(Gtk.WrapMode.WORD)
         self.textbuffer = self.textview.get_buffer()
         self.textbuffer.set_text("This is some text inside of a Gtk.TextView. "
             + "Select text and click one of the buttons 'bold', 'italic', "
@@ -114,39 +114,6 @@ class TextViewWindow(Gtk.Window):
         self.tag_found = self.textbuffer.create_tag("found",
             background="yellow")
 
-    def create_buttons(self):
-        check_editable = Gtk.CheckButton("Editable")
-        check_editable.set_active(True)
-        check_editable.connect("toggled", self.on_editable_toggled)
-        self.grid.attach(check_editable, 0, 2, 1, 1)
-
-        check_cursor = Gtk.CheckButton("Cursor Visible")
-        check_cursor.set_active(True)
-        check_editable.connect("toggled", self.on_cursor_toggled)
-        self.grid.attach_next_to(check_cursor, check_editable,
-            Gtk.PositionType.RIGHT, 1, 1)
-
-        radio_wrapnone = Gtk.RadioButton.new_with_label_from_widget(None,
-            "No Wrapping")
-        self.grid.attach(radio_wrapnone, 0, 3, 1, 1)
-
-        radio_wrapchar = Gtk.RadioButton.new_with_label_from_widget(
-            radio_wrapnone, "Character Wrapping")
-        self.grid.attach_next_to(radio_wrapchar, radio_wrapnone,
-            Gtk.PositionType.RIGHT, 1, 1)
-
-        radio_wrapword = Gtk.RadioButton.new_with_label_from_widget(
-            radio_wrapnone, "Word Wrapping")
-        self.grid.attach_next_to(radio_wrapword, radio_wrapchar,
-            Gtk.PositionType.RIGHT, 1, 1)
-
-        radio_wrapnone.connect("toggled", self.on_wrap_toggled,
-            Gtk.WrapMode.NONE)
-        radio_wrapchar.connect("toggled", self.on_wrap_toggled,
-            Gtk.WrapMode.CHAR)
-        radio_wrapword.connect("toggled", self.on_wrap_toggled,
-            Gtk.WrapMode.WORD)
-
     def on_button_clicked(self, widget, tag):
         bounds = self.textbuffer.get_selection_bounds()
         if len(bounds) != 0:
@@ -157,15 +124,6 @@ class TextViewWindow(Gtk.Window):
         start = self.textbuffer.get_start_iter()
         end = self.textbuffer.get_end_iter()
         self.textbuffer.remove_all_tags(start, end)
-
-    def on_editable_toggled(self, widget):
-        self.textview.set_editable(widget.get_active())
-
-    def on_cursor_toggled(self, widget):
-        self.textview.set_cursor_visible(widget.get_active())
-
-    def on_wrap_toggled(self, widget, mode):
-        self.textview.set_wrap_mode(mode)
 
     def on_justify_toggled(self, widget, justification):
         self.textview.set_justification(justification)

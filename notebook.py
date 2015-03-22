@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from gi.repository import Gdk, Gtk, Pango
+from projecttreeview import ProjectTreeView
 
 class TextViewWindow(Gtk.Window):
 
@@ -12,6 +13,9 @@ class TextViewWindow(Gtk.Window):
         self.grid = Gtk.Grid()
         self.add(self.grid)
 
+        self.projecttreeview = ProjectTreeView()
+        self.projecttreeview.set_property('width-request', 200)
+        self.grid.attach(self.projecttreeview, 0, 0, 1, 2)
         self.create_textview()
         self.create_toolbar()
 
@@ -20,7 +24,7 @@ class TextViewWindow(Gtk.Window):
 
     def create_toolbar(self):
         toolbar = Gtk.Toolbar()
-        self.grid.attach(toolbar, 0, 0, 3, 1)
+        self.grid.attach(toolbar, 1, 0, 2, 1)
 
         button_bold = Gtk.ToolButton.new_from_stock(Gtk.STOCK_BOLD)
         toolbar.insert(button_bold, 0)
@@ -83,7 +87,7 @@ class TextViewWindow(Gtk.Window):
         scrolledwindow = Gtk.ScrolledWindow()
         scrolledwindow.set_hexpand(True)
         scrolledwindow.set_vexpand(True)
-        self.grid.attach(scrolledwindow, 0, 1, 3, 1)
+        self.grid.attach(scrolledwindow, 1, 1, 2, 1)
 
         self.textview = Gtk.TextView()
         self.textview.set_wrap_mode(Gtk.WrapMode.WORD)

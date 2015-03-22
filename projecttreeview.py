@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from gi.repository import Gdk, GObject, Gtk, Pango
+from lxml import etree
 
 class ProjectTreeView(Gtk.VBox):
 
@@ -50,13 +51,58 @@ class ProjectTreeView(Gtk.VBox):
         self.pack_start(self.scrolledwindow, True, True, 0)
         self.show_all()
 
+    def rec_treestore_set_docs(self, iter, elem):
+        iter_elem = self.treestore.append(iter, [elem.text])
+        #print (elem.text)
+
+        subdoc_list = elem.findall('subdoc')
+        for subdoc in subdoc_list:
+            self.rec_treestore_set_docs(iter_elem, subdoc)
+
     def load_from_file(self, filename):
         print("user asked to load project from ", filename)
-        pass
+        doc = etree.parse(filename)
+
+        # Remove previous doc in treeview
+        self.treestore.clear()
+
+        # Parse XML file to add node recursively
+        doctree = doc.find('doctree')
+        subdoc_list = doctree.findall('subdoc')
+        for subdoc in subdoc_list:
+            self.rec_treestore_set_docs(None, subdoc)
+
+        self.treeview.expand_all()
+
+    def rec_treestore_get_docs(self, iter, elem):
+        s = self.treestore.get_value(iter, 0)
+
+        node = etree.SubElement(elem, 'subdoc')
+        node.text = s
+        #node.attrib["native"] = "true"
+
+        for i in range(0, self.treestore.iter_n_children(iter)):
+            child = self.treestore.iter_nth_child(iter, i)
+            self.rec_treestore_get_docs(child, node)
+
+        return node
 
     def save_to_file(self, filename):
         print("user asked to save project to ", filename)
-        pass
+        projet = etree.Element('notebook_project')
+        doc = etree.ElementTree(projet)
+
+        treeview_node = etree.SubElement(projet, 'doctree')
+        #treeview_node.text = "fichier 1"
+        #treeview_node.attrib["native"] = "true"
+
+        iter = self.treestore.get_iter_first()
+        while iter is not None and self.treestore.iter_is_valid(iter):
+            self.rec_treestore_get_docs(iter, treeview_node)
+            iter = self.treestore.iter_next(iter)
+
+        outfile = open(filename, 'w')
+        doc.write(outfile, pretty_print=True)
 
     def on_button_add_doc_clicked(self, widget):
         treesel = self.treeview.get_selection()

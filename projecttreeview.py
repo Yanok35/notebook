@@ -2,20 +2,15 @@
 
 from gi.repository import Gdk, GObject, Gtk, Pango
 
-class ProjectTreeView(Gtk.ScrolledWindow):
+class ProjectTreeView(Gtk.VBox):
 
     def __init__(self):
-        Gtk.ScrolledWindow.__init__(self)
+        Gtk.VBox.__init__(self)
 
         self.set_hexpand(True)
         self.set_vexpand(True)
 
         self.treestore = Gtk.TreeStore(GObject.TYPE_STRING)
-        iter = self.treestore.append(None, ['Premier chapitre'])
-        iter2 = self.treestore.append(iter, ['1.1'])
-        iter2 = self.treestore.append(iter, ['1.2'])
-        iter2 = self.treestore.append(iter, ['1.3'])
-        iter = self.treestore.append(None, ['Deuxieme chapitre'])
         self.treestore.connect("row-inserted", self.on_treemodel_row_inserted)
         self.treestore.connect("row-deleted", self.on_treemodel_row_deleted)
         self.treestore.connect("row-changed", self.on_treemodel_row_changed)
@@ -39,7 +34,20 @@ class ProjectTreeView(Gtk.ScrolledWindow):
 
         self.treeview.connect('key-press-event', self.on_treeview_key_press_event)
 
-        self.add(self.treeview)
+        toolbar = Gtk.Toolbar()
+        self.button_add_doc = Gtk.ToolButton.new_from_stock(Gtk.STOCK_ADD)
+        self.button_add_doc.connect("clicked", self.on_button_add_doc_clicked)
+        self.button_del_doc = Gtk.ToolButton.new_from_stock(Gtk.STOCK_REMOVE)
+        self.button_del_doc.set_sensitive(False)
+        self.button_del_doc.connect("clicked", self.on_button_del_doc_clicked)
+        toolbar.insert(self.button_add_doc, 0)
+        toolbar.insert(self.button_del_doc, 1)
+        toolbar.insert(Gtk.SeparatorToolItem(), 2)
+        self.pack_start(toolbar, False, False, 0)
+
+        self.scrolledwindow = Gtk.ScrolledWindow()
+        self.scrolledwindow.add(self.treeview)
+        self.pack_start(self.scrolledwindow, True, True, 0)
         self.show_all()
 
     def load_from_file(self, filename):
@@ -49,6 +57,42 @@ class ProjectTreeView(Gtk.ScrolledWindow):
     def save_to_file(self, filename):
         print("user asked to save project to ", filename)
         pass
+
+    def on_button_add_doc_clicked(self, widget):
+        treesel = self.treeview.get_selection()
+        store, sel_list = treesel.get_selected_rows()
+        if len(sel_list) == 0:
+            path = Gtk.TreePath.new_from_string('0')
+            row_pos = -1
+        elif len(sel_list) == 1:
+            path = sel_list[0]
+            row_pos = int(str(path)[str(path).rfind(':') + 1:])
+
+        #print ("add new doc at", str(path))
+        #print ("row_pos", str(row_pos))
+
+        parent = None
+        if len(sel_list) == 1:
+            iter_sel = self.treestore.get_iter(path)
+            superpath = path.copy()
+            if superpath.up() and superpath.get_depth() > 0:
+                parent = self.treestore.get_iter(superpath)
+
+        iter_new = self.treestore.insert(parent, row_pos+1)
+        self.treestore.set_value(iter_new, 0, "<Write your title>")
+
+    def on_button_del_doc_clicked(self, widget):
+        treesel = self.treeview.get_selection()
+        store, sel_list = treesel.get_selected_rows()
+        if len(sel_list) > 1:
+            print("todo: ask user for confirmation")
+            return
+        for path in sel_list:
+            print ("remove doc at", str(path))
+            iter = self.treestore.get_iter(path)
+            self.treestore.remove(iter)
+            # warning: after remove is called, all path in sel_list
+            # are not valid anymore... to fixup
 
     def on_treemodel_row_inserted(self, treemodel, path, iter):
         print ("row-inserted", str(path), iter)
@@ -63,6 +107,16 @@ class ProjectTreeView(Gtk.ScrolledWindow):
         print("selection changed")
         treeview = treesel.get_tree_view()
         store, sel_list = treesel.get_selected_rows()
+        if len(sel_list) == 0:
+            self.button_del_doc.set_sensitive(False)
+        else:
+            self.button_del_doc.set_sensitive(True)
+
+        if len(sel_list) > 1:
+            self.button_add_doc.set_sensitive(False)
+        else:
+            self.button_add_doc.set_sensitive(True)
+
         for treepath in sel_list:
             print (str(treepath))
 

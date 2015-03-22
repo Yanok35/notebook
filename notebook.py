@@ -2,6 +2,7 @@
 
 from gi.repository import Gdk, Gtk, Pango
 from projecttreeview import ProjectTreeView
+from editortextview import EditorTextView
 
 class TextViewWindow(Gtk.Window):
 
@@ -17,12 +18,13 @@ class TextViewWindow(Gtk.Window):
         self.projecttreeview.set_property('width-request', 200)
         self.grid.attach(self.projecttreeview, 0, 0, 1, 2)
         self.create_textview()
-        self.create_toolbar()
+        assert (self.editortextview is not None)
+        self.create_toolbar(self.editortextview)
 
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
         self.connect('key-press-event', self.on_key_press_event)
 
-    def create_toolbar(self):
+    def create_toolbar(self, editortextview):
         toolbar = Gtk.Toolbar()
         self.grid.attach(toolbar, 1, 0, 2, 1)
 
@@ -35,11 +37,12 @@ class TextViewWindow(Gtk.Window):
         button_underline = Gtk.ToolButton.new_from_stock(Gtk.STOCK_UNDERLINE)
         toolbar.insert(button_underline, 2)
 
-        button_bold.connect("clicked", self.on_button_clicked, self.tag_bold)
+        button_bold.connect("clicked", self.on_button_clicked,
+            editortextview.get_tag_bold())
         button_italic.connect("clicked", self.on_button_clicked,
-            self.tag_italic)
+            editortextview.get_tag_italic())
         button_underline.connect("clicked", self.on_button_clicked,
-            self.tag_underline)
+            editortextview.get_tag_underline())
 
         toolbar.insert(Gtk.SeparatorToolItem(), 3)
 
@@ -84,38 +87,17 @@ class TextViewWindow(Gtk.Window):
         toolbar.insert(save_btn, 12)
 
     def create_textview(self):
-        scrolledwindow = Gtk.ScrolledWindow()
-        scrolledwindow.set_hexpand(True)
-        scrolledwindow.set_vexpand(True)
-        self.grid.attach(scrolledwindow, 1, 1, 2, 1)
-
-        self.textview = Gtk.TextView()
-        self.textview.set_wrap_mode(Gtk.WrapMode.WORD)
-        self.textbuffer = self.textview.get_buffer()
-        self.textbuffer.set_text("")
-        scrolledwindow.add(self.textview)
-
-        self.tag_bold = self.textbuffer.create_tag("bold",
-            weight=Pango.Weight.BOLD)
-        self.tag_italic = self.textbuffer.create_tag("italic",
-            style=Pango.Style.ITALIC)
-        self.tag_underline = self.textbuffer.create_tag("underline",
-            underline=Pango.Underline.SINGLE)
+        self.editortextview = EditorTextView()
+        self.grid.attach(self.editortextview, 1, 1, 2, 1)
 
     def on_button_clicked(self, widget, tag):
-        bounds = self.textbuffer.get_selection_bounds()
-        if len(bounds) != 0:
-            start, end = bounds
-            self.textbuffer.apply_tag(tag, start, end)
+        self.editortextview.on_apply_tag(widget, tag)
 
     def on_clear_clicked(self, widget):
-        bounds = self.textbuffer.get_selection_bounds()
-        if len(bounds) != 0:
-            start, end = bounds
-            self.textbuffer.remove_all_tags(start, end)
+        self.editortextview.on_remove_all_tags(widget)
 
     def on_justify_toggled(self, widget, justification):
-        self.textview.set_justification(justification)
+        self.editortextview.set_justification(justification)
 
     def on_open_clicked(self, widget):
         dialog = Gtk.FileChooserDialog("Please choose a file", self,
@@ -131,13 +113,7 @@ class TextViewWindow(Gtk.Window):
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             selected_file = dialog.get_filename()
-            with open(selected_file, 'r') as f:
-                data = f.read()
-                self.textbuffer.set_text("")
-                emptyBuffer = self.textbuffer
-                format = emptyBuffer.register_deserialize_tagset()
-                self.textbuffer.deserialize(emptyBuffer,
-                    format, emptyBuffer.get_end_iter(), data)
+            self.editortextview.load_from_file(selected_file)
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
 
@@ -152,13 +128,7 @@ class TextViewWindow(Gtk.Window):
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             save_file = dialog.get_filename()
-            start_iter = self.textbuffer.get_start_iter()
-            end_iter = self.textbuffer.get_end_iter()
-            format = self.textbuffer.register_serialize_tagset()
-            text = self.textbuffer.serialize(self.textbuffer,
-                format, start_iter, end_iter)
-            with open(save_file, 'w') as f:
-                f.write(text)
+            self.editortextview.save_to_file(save_file)
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
 
@@ -178,9 +148,7 @@ class TextViewWindow(Gtk.Window):
             elif key == 'v':
                 pixbuf = self.clipboard.wait_for_image()
                 if pixbuf != None:
-                    mark = self.textbuffer.get_mark('insert')
-                    cur_iter = self.textbuffer.get_iter_at_mark(mark)
-                    self.textbuffer.insert_pixbuf(cur_iter, pixbuf)
+                    self.editortextview.insert_pixbuf_at_cursor(pixbuf)
                 else:
                     return False
 

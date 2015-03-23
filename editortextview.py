@@ -7,6 +7,8 @@ class EditorTextView(Gtk.ScrolledWindow):
     def __init__(self):
         Gtk.ScrolledWindow.__init__(self)
 
+        self.set_size_request(600, -1)
+
         self.set_hexpand(True)
         self.set_vexpand(True)
 

@@ -17,9 +17,13 @@ class TextViewWindow(Gtk.Window):
         self.projecttreeview = ProjectTreeView()
         self.projecttreeview.set_property('width-request', 200)
         self.grid.attach(self.projecttreeview, 0, 0, 1, 2)
-        self.create_textview()
-        assert (self.editortextview is not None)
-        self.create_toolbar(self.editortextview)
+        #self.create_textview()
+
+        self.editortextview = self.projecttreeview.get_editor_widget()
+        self.grid.attach(self.editortextview, 1, 1, 2, 1)
+
+        #assert (self.editortextview is not None)
+        self.create_toolbar(None)
 
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
         self.connect('key-press-event', self.on_key_press_event)
@@ -37,12 +41,12 @@ class TextViewWindow(Gtk.Window):
         button_underline = Gtk.ToolButton.new_from_stock(Gtk.STOCK_UNDERLINE)
         toolbar.insert(button_underline, 2)
 
-        button_bold.connect("clicked", self.on_button_clicked,
-            editortextview.get_tag_bold())
-        button_italic.connect("clicked", self.on_button_clicked,
-            editortextview.get_tag_italic())
-        button_underline.connect("clicked", self.on_button_clicked,
-            editortextview.get_tag_underline())
+        #button_bold.connect("clicked", self.on_button_clicked,
+        #    editortextview.get_tag_bold())
+        #button_italic.connect("clicked", self.on_button_clicked,
+        #    editortextview.get_tag_italic())
+        #button_underline.connect("clicked", self.on_button_clicked,
+        #    editortextview.get_tag_underline())
 
         toolbar.insert(Gtk.SeparatorToolItem(), 3)
 
@@ -86,9 +90,9 @@ class TextViewWindow(Gtk.Window):
         save_btn.connect("clicked", self.on_save_clicked)
         toolbar.insert(save_btn, 12)
 
-    def create_textview(self):
-        self.editortextview = EditorTextView()
-        self.grid.attach(self.editortextview, 1, 1, 2, 1)
+#    def create_textview(self):
+#        self.editortextview = EditorTextView()
+#        self.grid.attach(self.editortextview, 1, 1, 2, 1)
 
     def on_button_clicked(self, widget, tag):
         self.editortextview.on_apply_tag(widget, tag)
@@ -97,7 +101,7 @@ class TextViewWindow(Gtk.Window):
         self.editortextview.on_remove_all_tags(widget)
 
     def on_justify_toggled(self, widget, justification):
-        self.editortextview.set_justification(justification)
+        self.editortextview.on_justify_toggled(widget, justification)
 
     def on_open_clicked(self, widget):
         dialog = Gtk.FileChooserDialog("Please choose a file", self,
@@ -113,7 +117,8 @@ class TextViewWindow(Gtk.Window):
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             selected_file = dialog.get_filename()
-            self.editortextview.load_from_file(selected_file)
+            #self.editortextview.load_from_file(selected_file)
+            self.projecttreeview.load_from_file(selected_file)
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
 
@@ -128,7 +133,8 @@ class TextViewWindow(Gtk.Window):
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             save_file = dialog.get_filename()
-            self.editortextview.save_to_file(save_file)
+            #self.editortextview.save_to_file(save_file)
+            self.projecttreeview.save_to_file(save_file)
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
 
@@ -156,6 +162,11 @@ class TextViewWindow(Gtk.Window):
             return True
 
         return False
+
+    def set_editor_widget(self, widget):
+        self.editortextview = widget
+        #self.grid.attach(self.editortextview, 1, 1, 2, 1)
+
 
 win = TextViewWindow()
 win.connect("delete-event", Gtk.main_quit)

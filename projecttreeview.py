@@ -2,8 +2,8 @@
 
 # Unicode support
 from __future__ import unicode_literals
-#if sys.version_info[0] == 2:
-#    str = unicode
+
+import os
 
 from gi.repository import Gdk, GObject, Gtk, Pango
 from lxml import etree
@@ -65,64 +65,94 @@ class ProjectTreeView(Gtk.VBox):
         self.subdocs_empty_project.set_size_request(600, -1)
         self.subdocs_vbox.pack_start(self.subdocs_empty_project, True, True, 0)
 
-    def rec_treestore_set_docs(self, iter, elem):
-        iter_elem = self.treestore.append(iter, [elem.text])
+    def rec_treestore_set_docs(self, iter, elem, filesdir):
+
+        #print(type(elem.text), elem.text.__class__.__name__)
+        if elem.text.__class__.__name__ != 'unicode':
+            name = unicode(elem.text, encoding='utf-8')
+        else:
+            name = elem.text
+        docid = int(elem.attrib["id"])
+        iter_elem = self.treestore.append(iter, [elem.text, docid])
         #print (elem.text)
 
+        # Create a new subdocument from file
+        filename = os.path.join(filesdir, str(docid)+".subdoc")
+        editortextview = EditorTextView()
+        editortextview.load_from_file(filename)
+        self.subdocs_refs[docid] = (editortextview, filename)
+        # Add widget to global VBox
+        self.subdocs_vbox.pack_start(editortextview, True, True, 3)
+
+        # Parse node's child if they exists
         subdoc_list = elem.findall('subdoc')
         for subdoc in subdoc_list:
-            self.rec_treestore_set_docs(iter_elem, subdoc)
+            self.rec_treestore_set_docs(iter_elem, subdoc, filesdir)
 
     def load_from_file(self, filename):
         print("user asked to load project from ", filename)
+        print(os.path.basename(filename))
         doc = etree.parse(filename)
+
+        # todo: check file is in good format...
+        # Check files dir exists
+        filesdir = filename + ".files"
+        if not os.path.exists(filesdir):
+            raise ValueError
 
         # Remove previous doc in treeview
         self.treestore.clear()
+        # Remove subdoc refs
+        self.subdocs_id = 0
+        self.subdocs_refs = {}
 
         # Parse XML file to add node recursively
         doctree = doc.find('doctree')
+        self.subdocs_id = int(doctree.attrib["subdocs_id"])
         subdoc_list = doctree.findall('subdoc')
         for subdoc in subdoc_list:
-            self.rec_treestore_set_docs(None, subdoc)
+            self.rec_treestore_set_docs(None, subdoc, filesdir)
 
         self.treeview.expand_all()
 
-    def rec_treestore_get_docs(self, iter, elem):
-        #s = unicode(self.treestore.get_value(iter, 0), encoding='utf-8')
-        s = self.treestore.get_value(iter, 0)
-        print(type(s), s.__class__)
-        #print(type(unicode(s)))
+    def rec_treestore_get_docs(self, iter, elem, filesdir):
+        docname = unicode(self.treestore.get_value(iter, 0), encoding='utf-8')
+        docid = unicode(self.treestore.get_value(iter, 1))
 
         node = etree.SubElement(elem, 'subdoc')
-        el = s.encode('utf-8')
-        print (type(el))
-        try:
-            node.text = s #el
-        except ValueError:
-            print ('Exception from lxml : "' + s + '" is not XML compatible')
-            print (el)
-            print ('All strings must be XML compatible: Unicode or ASCII, no NULL bytes or control characters')
-        #node.attrib["native"] = "true"
+        node.text = docname
+        node.attrib["id"] = docid
+
+        # Catch content of subdoc[docid] and save to file
+        filename = os.path.join(filesdir, str(docid)+".subdoc")
+        print("doc id ", docid, " save to ", filename)
+        (editortextview, _dont_care_) = self.subdocs_refs[int(docid)]
+        editortextview.save_to_file(filename)
 
         for i in range(0, self.treestore.iter_n_children(iter)):
             child = self.treestore.iter_nth_child(iter, i)
-            self.rec_treestore_get_docs(child, node)
+            self.rec_treestore_get_docs(child, node, filesdir)
 
         return node
 
     def save_to_file(self, filename):
         print("user asked to save project to ", filename)
+
+        filesdir = filename + ".files"
+        print(filesdir)
+        if not os.path.exists(filesdir):
+            os.mkdir(filesdir)
+
         projet = etree.Element('notebook_project')
         doc = etree.ElementTree(projet)
 
         treeview_node = etree.SubElement(projet, 'doctree')
         #treeview_node.text = "fichier 1"
-        #treeview_node.attrib["native"] = "true"
+        treeview_node.attrib["subdocs_id"] = unicode(self.subdocs_id)
 
         iter = self.treestore.get_iter_first()
         while iter is not None and self.treestore.iter_is_valid(iter):
-            self.rec_treestore_get_docs(iter, treeview_node)
+            self.rec_treestore_get_docs(iter, treeview_node, filesdir)
             iter = self.treestore.iter_next(iter)
 
         outfile = open(filename, 'w')
@@ -133,9 +163,6 @@ class ProjectTreeView(Gtk.VBox):
         return self.subdocs_id
 
     def get_editor_widget(self):
-        '''
-        This function return the editor widget
-        '''
         return self.subdocs_vbox
 
     def editor_update_widget_visibility(self, sel_list):
@@ -244,7 +271,6 @@ class ProjectTreeView(Gtk.VBox):
 
         # Reflect the selection on main app editor widget.
         self.editor_update_widget_visibility(sel_list)
-        #self.subdocs_vbox.show_all()
 
     def on_treeview_key_press_event(self, window, event):
         key = Gdk.keyval_name(event.keyval)
@@ -263,12 +289,9 @@ class ProjectTreeView(Gtk.VBox):
         return False
 
     def on_treeview_cell_edited(self, cell_renderer, path, new_text):
-
-        #u = unicode(new_text, encoding='utf-8')
-        u = new_text
-
+        new_text = unicode(new_text, encoding='utf-8')
         print ("cell edited", str(path), " => ", new_text)
         iter = self.treestore.get_iter(path)
-        self.treestore.set_value(iter, 0, u)
+        self.treestore.set_value(iter, 0, new_text)
         #treestore = self.treeview.get_model()
 

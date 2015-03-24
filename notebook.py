@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
+
 from gi.repository import Gdk, Gtk, Pango
 from projecttreeview import ProjectTreeView
 from editortextview import EditorTextView

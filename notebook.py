@@ -2,19 +2,29 @@
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
-from gi.repository import Gdk, Gtk, Pango
+from gi.repository import Gdk, Gio, Gtk, Pango
 from projecttreeview import ProjectTreeView
 from editortextview import EditorTextView
 
-class TextViewWindow(Gtk.Window):
+class NotebookApp(Gtk.Application):
 
     def __init__(self):
-        Gtk.Window.__init__(self, title="TextView Example")
+        Gtk.Application.__init__(self, application_id="apps.notebook",
+                                 flags=Gio.ApplicationFlags.FLAGS_NONE)
+        self.connect("activate", self.on_activate)
+        #self.connect("delete-event", Gtk.main_quit)
 
-        self.set_default_size(-1, 350)
+    def on_activate(self, data=None):
+
+        self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
+        self.window.set_title("TextView Example")
+        self.window.connect("delete-event", Gtk.main_quit)
+        self.add_window(self.window)
+
+        self.window.set_default_size(-1, 350)
 
         self.grid = Gtk.Grid()
-        self.add(self.grid)
+        self.window.add(self.grid)
 
         self.projecttreeview = ProjectTreeView()
         self.projecttreeview.set_property('width-request', 200)
@@ -28,7 +38,8 @@ class TextViewWindow(Gtk.Window):
         self.create_toolbar(None)
 
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
-        self.connect('key-press-event', self.on_key_press_event)
+        self.window.connect('key-press-event', self.on_key_press_event)
+        self.window.show_all()
 
     def create_toolbar(self, editortextview):
         toolbar = Gtk.Toolbar()
@@ -106,7 +117,7 @@ class TextViewWindow(Gtk.Window):
         self.editortextview.on_justify_toggled(widget, justification)
 
     def on_open_clicked(self, widget):
-        dialog = Gtk.FileChooserDialog("Please choose a file", self,
+        dialog = Gtk.FileChooserDialog("Please choose a file", self.window,
             Gtk.FileChooserAction.OPEN,
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
              Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
@@ -127,7 +138,7 @@ class TextViewWindow(Gtk.Window):
         dialog.destroy()
 
     def on_save_clicked(self, widget):
-        dialog = Gtk.FileChooserDialog("Save file", self,
+        dialog = Gtk.FileChooserDialog("Save file", self.window,
         Gtk.FileChooserAction.SAVE,
         (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
          Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
@@ -169,8 +180,7 @@ class TextViewWindow(Gtk.Window):
         self.editortextview = widget
         #self.grid.attach(self.editortextview, 1, 1, 2, 1)
 
+if __name__ == "__main__":
+    app = NotebookApp()
+    app.run(None)
 
-win = TextViewWindow()
-win.connect("delete-event", Gtk.main_quit)
-win.show_all()
-Gtk.main()

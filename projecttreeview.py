@@ -13,6 +13,7 @@ from lxml import etree
 from editortextview import EditorTextView
 
 class ProjectTreeView(Gtk.VBox):
+    __gtype_name__ = 'ProjectTreeView'
 
     def __init__(self):
         Gtk.VBox.__init__(self)

@@ -5,6 +5,7 @@
 from gi.repository import Gdk, Gtk, Pango
 
 class EditorTextView(Gtk.ScrolledWindow):
+    __gtype_name__ = 'EditorTextView'
 
     def __init__(self):
         Gtk.ScrolledWindow.__init__(self)

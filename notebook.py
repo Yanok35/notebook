@@ -12,34 +12,60 @@ class NotebookApp(Gtk.Application):
         Gtk.Application.__init__(self, application_id="apps.notebook",
                                  flags=Gio.ApplicationFlags.FLAGS_NONE)
         self.connect("activate", self.on_activate)
+###        self.connect("startup", self.on_startup)
         #self.connect("delete-event", Gtk.main_quit)
 
     def on_activate(self, data=None):
 
-        self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-        self.window.set_title("TextView Example")
-        self.window.connect("delete-event", Gtk.main_quit)
-        self.add_window(self.window)
+        ### self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
+        ### self.window.set_title("TextView Example")
+        ### self.window.connect("delete-event", Gtk.main_quit)
+        ### self.add_window(self.window)
 
-        self.window.set_default_size(-1, 350)
+        ### self.window.set_default_size(-1, 350)
 
-        self.grid = Gtk.Grid()
-        self.window.add(self.grid)
+        ### self.grid = Gtk.Grid()
+        ### self.window.add(self.grid)
 
-        self.projecttreeview = ProjectTreeView()
-        self.projecttreeview.set_property('width-request', 200)
-        self.grid.attach(self.projecttreeview, 0, 0, 1, 2)
-        #self.create_textview()
+        ### self.projecttreeview = ProjectTreeView()
+        ### self.projecttreeview.set_property('width-request', 200)
+        ### self.grid.attach(self.projecttreeview, 0, 0, 1, 2)
+        ### #self.create_textview()
 
+        ### self.editortextview = self.projecttreeview.get_editor_widget()
+        ### self.grid.attach(self.editortextview, 1, 1, 2, 1)
+
+        ### #assert (self.editortextview is not None)
+        ### self.create_toolbar(None)
+
+        ### self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+        ### self.window.connect('key-press-event', self.on_key_press_event)
+        ### self.window.show_all()
+        builder = Gtk.Builder.new_from_file("notebook.ui")
+
+        self.projecttreeview = builder.get_object("projecttreeview1")
         self.editortextview = self.projecttreeview.get_editor_widget()
-        self.grid.attach(self.editortextview, 1, 1, 2, 1)
 
-        #assert (self.editortextview is not None)
-        self.create_toolbar(None)
+        self.hpaned = builder.get_object("paned1")
+        self.hpaned.set_position(200)
+        self.hpaned.pack2(self.editortextview, True, True) # resize on, shrink on
+        #self.grid.attach(self.editortextview, 1, 1, 2, 1)
 
-        self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
-        self.window.connect('key-press-event', self.on_key_press_event)
+        self.window = builder.get_object("window1")
         self.window.show_all()
+        self.add_window(self.window)
+        pass
+
+###    def on_startup(self, data=None):
+###        builder = Gtk.Builder.new_from_file("notebook.ui")
+###        self.window = builder.get_object("applicationwindow1")
+###
+###        #self.window.connect("delete-event", Gtk.main_quit)
+###
+###        self.window.set_default_size(-1, 350)
+###        self.window.show_all()
+###
+###        #self.add_window(self.window)
 
     def create_toolbar(self, editortextview):
         toolbar = Gtk.Toolbar()

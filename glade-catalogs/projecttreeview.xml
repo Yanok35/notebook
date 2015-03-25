@@ -1,0 +1,13 @@
+<glade-catalog name="glade_custom_catalog" library="gladepython" domain="glade-3" depends="gtk+">
+ <init-function>glade_python_init</init-function>
+
+ <glade-widget-classes>
+   <glade-widget-class title="ProjectTreeView" name="ProjectTreeView" generic-name="projecttreeview"/>
+   <glade-widget-class title="EditorTextView" name="EditorTextView" generic-name="editortextview"/>
+ </glade-widget-classes>
+
+ <glade-widget-group name="python" title="Python">
+   <glade-widget-class-ref name="ProjectTreeView"/>
+   <glade-widget-class-ref name="EditorTextView"/>
+ </glade-widget-group>
+</glade-catalog>

@@ -1,3 +1,3 @@
-from editortextview import EditorTextView
 from projecttreeview import ProjectTreeView
+from editortextview import EditorTextView
 

@@ -2,7 +2,7 @@
  <init-function>glade_python_init</init-function>
 
  <glade-widget-classes>
-   <glade-widget-class title="ProjectTreeView" name="ProjectTreeView" generic-name="projecttreeview"/>
+   <glade-widget-class title="ProjectTreeView" name="ProjectTreeView" generic-name="projecttreeview" deprecated="false"/>
    <glade-widget-class title="EditorTextView" name="EditorTextView" generic-name="editortextview"/>
  </glade-widget-classes>
 

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Generated with glade 3.16.1 -->
 <interface>
-  <!-- interface-requires projecttreeview 0.0 -->
   <!-- interface-requires glade_custom_catalog 0.0 -->
   <requires lib="gtk+" version="3.10"/>
   <object class="GtkWindow" id="window1">
@@ -174,15 +173,15 @@
           <object class="GtkPaned" id="paned1">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="position_set">True</property>
             <child>
               <object class="ProjectTreeView" id="projecttreeview1">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="orientation">vertical</property>
               </object>
               <packing>
-                <property name="resize">True</property>
-                <property name="shrink">False</property>
+                <property name="resize">False</property>
+                <property name="shrink">True</property>
               </packing>
             </child>
             <child>

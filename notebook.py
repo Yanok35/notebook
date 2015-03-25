@@ -44,11 +44,11 @@ class NotebookApp(Gtk.Application):
         builder = Gtk.Builder.new_from_file("notebook.ui")
 
         self.projecttreeview = builder.get_object("projecttreeview1")
-        self.editortextview = self.projecttreeview.get_editor_widget()
+#        self.editortextview = self.projecttreeview.get_editor_widget()
 
         self.hpaned = builder.get_object("paned1")
         self.hpaned.set_position(200)
-        self.hpaned.pack2(self.editortextview, True, True) # resize on, shrink on
+        #self.hpaned.pack2(self.editortextview, True, True) # resize on, shrink on
         #self.grid.attach(self.editortextview, 1, 1, 2, 1)
 
         self.window = builder.get_object("window1")
@@ -132,6 +132,23 @@ class NotebookApp(Gtk.Application):
 #    def create_textview(self):
 #        self.editortextview = EditorTextView()
 #        self.grid.attach(self.editortextview, 1, 1, 2, 1)
+
+    def on_subdoc_inserted(self, int):
+        pass
+
+    def on_subdoc_deleted(self, int):
+        pass
+
+    def on_subdoc_changed(self, int):
+        pass
+
+    def on_subdoc_order-changed(self):
+        pass
+
+    def on_subdoc_selection-changed(self):
+        pass
+
+
 
     def on_button_clicked(self, widget, tag):
         self.editortextview.on_apply_tag(widget, tag)

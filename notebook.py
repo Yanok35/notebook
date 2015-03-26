@@ -45,6 +45,11 @@ class NotebookApp(Gtk.Application):
 
         self.projecttreeview = builder.get_object("projecttreeview1")
 #        self.editortextview = self.projecttreeview.get_editor_widget()
+        self.projecttreeview.connect('subdoc-inserted', self.on_subdoc_inserted)
+        self.projecttreeview.connect('subdoc-deleted', self.on_subdoc_deleted)
+        self.projecttreeview.connect('subdoc-changed', self.on_subdoc_changed)
+        self.projecttreeview.connect('subdoc-order-changed', self.on_subdoc_order_changed)
+        self.projecttreeview.connect('subdoc-selection-changed', self.on_subdoc_selection_changed)
 
         self.hpaned = builder.get_object("paned1")
         self.hpaned.set_position(200)
@@ -133,19 +138,24 @@ class NotebookApp(Gtk.Application):
 #        self.editortextview = EditorTextView()
 #        self.grid.attach(self.editortextview, 1, 1, 2, 1)
 
-    def on_subdoc_inserted(self, int):
+    def on_subdoc_inserted(self, projecttreeview, docid):
+        print('*** on_subdoc_inserted signal received, docid = ' + str(docid))
         pass
 
-    def on_subdoc_deleted(self, int):
+    def on_subdoc_deleted(self, projecttreeview, docid):
+        print('*** on_subdoc_deleted signal received, docid = ' + str(docid))
         pass
 
-    def on_subdoc_changed(self, int):
+    def on_subdoc_changed(self, projecttreeview, docid):
+        print('*** on_subdoc_changed signal received, docid = ' + str(docid))
         pass
 
-    def on_subdoc_order_changed(self):
+    def on_subdoc_order_changed(self, projecttreeview):
+        print('*** on_order_changed signal received')
         pass
 
-    def on_subdoc_selection_changed(self):
+    def on_subdoc_selection_changed(self, projecttreeview):
+        print('*** on_selection_changed signal received')
         pass
 
 

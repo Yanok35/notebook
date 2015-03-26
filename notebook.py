@@ -142,10 +142,10 @@ class NotebookApp(Gtk.Application):
     def on_subdoc_changed(self, int):
         pass
 
-    def on_subdoc_order-changed(self):
+    def on_subdoc_order_changed(self):
         pass
 
-    def on_subdoc_selection-changed(self):
+    def on_subdoc_selection_changed(self):
         pass
 
 

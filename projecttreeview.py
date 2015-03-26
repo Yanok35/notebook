@@ -24,7 +24,8 @@ class ProjectTreeView(Gtk.Box):
     }
 
 #    def do_subdoc_inserted(self, arg):
-#        print "class method for `my_signal' called with argument", arg
+#        classname = self.__class__.__name__
+#        print ("do_subdoc_inserted() class method for `"+classname+"' called with argument", arg)
 
     def __init__(self):
         Gtk.Box.__init__(self)
@@ -34,18 +35,18 @@ class ProjectTreeView(Gtk.Box):
         self.set_vexpand(True)
 
         self.treestore = Gtk.TreeStore(GObject.TYPE_STRING, GObject.TYPE_INT)
-        self.treestore.connect("row-inserted", self.on_treemodel_row_inserted)
-        self.treestore.connect("row-deleted", self.on_treemodel_row_deleted)
-        self.treestore.connect("row-changed", self.on_treemodel_row_changed)
+        self.sigid_row_inserted = self.treestore.connect("row-inserted", self.on_treemodel_row_inserted)
+        self.sigid_row_deleted = self.treestore.connect("row-deleted", self.on_treemodel_row_deleted)
+        self.sigid_row_changed = self.treestore.connect("row-changed", self.on_treemodel_row_changed)
 
         self.treeview = Gtk.TreeView.new_with_model(self.treestore)
         self.treeview.expand_all()
         self.treeview.set_reorderable(True)
         self.treeview.set_activate_on_single_click(True)
 
-        sel = self.treeview.get_selection()
-        sel.set_mode(Gtk.SelectionMode.MULTIPLE)
-        sel.connect("changed", self.on_treeview_selection_changed)
+        self.treeselection = self.treeview.get_selection()
+        self.treeselection.set_mode(Gtk.SelectionMode.MULTIPLE)
+        self.sigid_treeselection_changed = self.treeselection.connect("changed", self.on_treeview_selection_changed)
 
         column_title = ['Document name', 'DocID']
         for i in range(0, len(column_title)):
@@ -117,6 +118,11 @@ class ProjectTreeView(Gtk.Box):
         if not os.path.exists(filesdir):
             raise ValueError
 
+        self.treestore.handler_block(self.sigid_row_inserted)
+        self.treestore.handler_block(self.sigid_row_deleted)
+        self.treestore.handler_block(self.sigid_row_changed)
+        self.treeselection.handler_block(self.sigid_treeselection_changed)
+        
         # Remove previous doc in treeview
         self.treestore.clear()
         # Remove subdoc refs
@@ -129,6 +135,14 @@ class ProjectTreeView(Gtk.Box):
         subdoc_list = doctree.findall('subdoc')
         for subdoc in subdoc_list:
             self.rec_treestore_set_docs(None, subdoc, filesdir)
+
+        self.treeselection.handler_unblock(self.sigid_treeselection_changed)
+        self.treestore.handler_unblock(self.sigid_row_changed)
+        self.treestore.handler_unblock(self.sigid_row_deleted)
+        self.treestore.handler_unblock(self.sigid_row_inserted)
+
+        if len(subdoc_list) > 0:
+            self.emit('subdoc-order-changed')
 
         self.treeview.expand_all()
 
@@ -239,6 +253,7 @@ class ProjectTreeView(Gtk.Box):
         self.treestore.set_value(iter_new, 0, "<Write your title>")
         self.treestore.set_value(iter_new, 1, docid)
         self.emit('subdoc-inserted', docid)
+        #self.emit('subdoc-changed', docid)
 
         # Add widget to global VBox
         ### self.subdocs_vbox.pack_start(editortextview, True, True, 3)
@@ -257,6 +272,7 @@ class ProjectTreeView(Gtk.Box):
             docid = self.treestore.get_value(iter, 1)
             self.treestore.remove(iter)
             self.emit('subdoc-deleted', docid)
+            #self.emit('subdoc-changed', docid)
             # warning: after remove is called, all path in sel_list
             # are not valid anymore... to fixup
 
@@ -307,6 +323,10 @@ class ProjectTreeView(Gtk.Box):
                 print("start edit", str(sel_list[0]))
                 self.treeview.set_cursor(sel_list[0], start_editing=True)
                 return True
+
+        # if event.state & Gdk.ModifierType.CONTROL_MASK and key in ('o', 's', 'v'):
+        #     if key == 'o':
+        #         self.load_from_file("projet.xml")
         return False
 
     def on_treeview_cell_edited(self, cell_renderer, path, new_text):
@@ -314,5 +334,9 @@ class ProjectTreeView(Gtk.Box):
         print ("cell edited", str(path), " => ", new_text)
         iter = self.treestore.get_iter(path)
         self.treestore.set_value(iter, 0, new_text)
+
+        docid = int(self.treestore.get_value(iter, 1))
+        self.emit('subdoc-changed', docid)
+
         #treestore = self.treeview.get_model()
 

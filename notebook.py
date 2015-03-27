@@ -42,6 +42,7 @@ class NotebookApp(Gtk.Application):
         ### self.window.connect('key-press-event', self.on_key_press_event)
         ### self.window.show_all()
         builder = Gtk.Builder.new_from_file("notebook.ui")
+        builder.connect_signals(self)
 
         self.projecttreeview = builder.get_object("projecttreeview1")
 #        self.editortextview = self.projecttreeview.get_editor_widget()
@@ -228,6 +229,18 @@ class NotebookApp(Gtk.Application):
             return True
 
         return False
+
+    def on_menuitem_project_new_activate(self, item):
+        pass
+
+    def on_menuitem_project_open_activate(self, item):
+        self.on_open_clicked(item)
+
+    def on_menuitem_project_save_activate(self, item):
+        self.on_save_clicked(item)
+
+    def on_menuitem_project_saveas_activate(self, item):
+        pass
 
     def set_editor_widget(self, widget):
         self.editortextview = widget

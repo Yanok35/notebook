@@ -23,10 +23,6 @@ class ProjectTreeView(Gtk.Box):
         str('subdoc-selection-changed'): (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
-#    def do_subdoc_inserted(self, arg):
-#        classname = self.__class__.__name__
-#        print ("do_subdoc_inserted() class method for `"+classname+"' called with argument", arg)
-
     def __init__(self):
         Gtk.Box.__init__(self)
 
@@ -46,6 +42,7 @@ class ProjectTreeView(Gtk.Box):
 
         self.treeselection = self.treeview.get_selection()
         self.treeselection.set_mode(Gtk.SelectionMode.MULTIPLE)
+        self.current_sel_list = None
         self.sigid_treeselection_changed = self.treeselection.connect("changed", self.on_treeview_selection_changed)
 
         column_title = ['Document name', 'DocID']
@@ -193,6 +190,11 @@ class ProjectTreeView(Gtk.Box):
         self.subdocs_id += 1
         return self.subdocs_id
 
+    def get_selection_list(self):
+        #for treepath in sel_list:
+        #    print (str(treepath))
+        return self.current_sel_list
+
 ###    def get_editor_widget(self):
 ###        return self.subdocs_vbox
 
@@ -307,7 +309,9 @@ class ProjectTreeView(Gtk.Box):
 
         # Reflect the selection on main app editor widget.
         ### self.editor_update_widget_visibility(sel_list)
-        self.emit('subdoc-selection-changed')
+        if self.current_sel_list != sel_list:
+            self.current_sel_list = sel_list
+            self.emit('subdoc-selection-changed')
 
     def on_treeview_key_press_event(self, window, event):
         key = Gdk.keyval_name(event.keyval)

@@ -195,9 +195,13 @@ class ProjectTreeView(Gtk.Box):
         return self.subdocs_id
 
     def get_selection_list(self):
-        #for treepath in sel_list:
-        #    print (str(treepath))
-        return self.current_sel_list
+        retlist = []
+        for treepath in self.current_sel_list:
+            iter = self.treestore.get_iter(treepath)
+            docid = self.treestore.get_value(iter, 1)
+            retlist.append(int(docid))
+        return retlist
+        #return self.current_sel_list
 
 ###    def get_editor_widget(self):
 ###        return self.subdocs_vbox

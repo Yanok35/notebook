@@ -49,8 +49,12 @@ class NotebookApp(Gtk.Application):
         self.projecttreeview.connect('subdoc-inserted', self.on_subdoc_inserted)
         self.projecttreeview.connect('subdoc-deleted', self.on_subdoc_deleted)
         self.projecttreeview.connect('subdoc-changed', self.on_subdoc_changed)
+        self.projecttreeview.connect('subdoc-load-from-file', self.on_subdoc_load_from_file)
+        self.projecttreeview.connect('subdoc-save-to-file', self.on_subdoc_save_to_file)
         self.projecttreeview.connect('subdoc-order-changed', self.on_subdoc_order_changed)
         self.projecttreeview.connect('subdoc-selection-changed', self.on_subdoc_selection_changed)
+
+        self.textview = builder.get_object("editortextview1")
 
         self.hpaned = builder.get_object("paned1")
         self.hpaned.set_position(200)
@@ -141,25 +145,43 @@ class NotebookApp(Gtk.Application):
 
     def on_subdoc_inserted(self, projecttreeview, docid):
         print('*** on_subdoc_inserted signal received, docid = ' + str(docid))
+        self.textview.subdoc_new(docid)
+        # send selection instead...
+        #self.textview.set_visible(docid)
         pass
 
     def on_subdoc_deleted(self, projecttreeview, docid):
         print('*** on_subdoc_deleted signal received, docid = ' + str(docid))
+        #self.textview.set_visible(None)
         pass
 
     def on_subdoc_changed(self, projecttreeview, docid):
         print('*** on_subdoc_changed signal received, docid = ' + str(docid))
         pass
 
+    def on_subdoc_load_from_file(self, projecttreeview, docid, filename):
+        print('*** on_subdoc_load_from_file signal received, docid = ' + str(docid))
+        print('filename = ' + str(filename))
+        self.textview.subdoc_load_from_file(docid, filename)
+        pass
+
+    def on_subdoc_save_to_file(self, projecttreeview, docid, filename):
+        print('*** on_subdoc_save_to_file signal received, docid = ' + str(docid))
+        print('filename = ' + str(filename))
+        self.textview.subdoc_save_to_file(docid, filename)
+
     def on_subdoc_order_changed(self, projecttreeview):
-        print('*** on_order_changed signal received')
+        print('*** on_subdoc_order_changed signal received')
         pass
 
     def on_subdoc_selection_changed(self, projecttreeview):
-        print('*** on_selection_changed signal received')
-        pass
-
-
+        print('*** on_subdoc_selection_changed signal received')
+        sel_list = projecttreeview.get_selection_list()
+        print(len(sel_list), sel_list)
+        if len(sel_list) == 0:
+            self.textview.set_visible(None)
+        else:
+            self.textview.set_visible(sel_list[0])
 
     def on_button_clicked(self, widget, tag):
         self.editortextview.on_apply_tag(widget, tag)
@@ -191,7 +213,7 @@ class NotebookApp(Gtk.Application):
 
         dialog.destroy()
 
-    def on_save_clicked(self, widget):
+    def on_save_clicked(self, widget, force_dialog = False):
         dialog = Gtk.FileChooserDialog("Save file", self.window,
         Gtk.FileChooserAction.SAVE,
         (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
@@ -240,7 +262,10 @@ class NotebookApp(Gtk.Application):
         self.on_save_clicked(item)
 
     def on_menuitem_project_saveas_activate(self, item):
-        pass
+        self.on_save_clicked(item, True)
+
+    def on_menuitem_app_quit_activate(self, item):
+        self.quit()
 
     def set_editor_widget(self, widget):
         self.editortextview = widget

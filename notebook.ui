@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Generated with glade 3.16.1 -->
 <interface>
-  <requires lib="gtk+" version="3.10"/>
   <!-- interface-requires glade_custom_catalog 0.0 -->
+  <requires lib="gtk+" version="3.10"/>
   <object class="GtkWindow" id="window1">
     <property name="can_focus">False</property>
     <property name="default_width">800</property>
@@ -53,6 +53,7 @@
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_menuitem_project_save_activate" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -62,6 +63,7 @@
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_menuitem_project_saveas_activate" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -77,6 +79,7 @@
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_menuitem_app_quit_activate" swapped="no"/>
                       </object>
                     </child>
                   </object>
@@ -253,7 +256,15 @@
               </packing>
             </child>
             <child>
-              <placeholder/>
+              <object class="EditorTextView" id="editortextview1">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="shadow_type">in</property>
+              </object>
+              <packing>
+                <property name="resize">True</property>
+                <property name="shrink">True</property>
+              </packing>
             </child>
           </object>
           <packing>

@@ -2,6 +2,8 @@
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
+import sys
+
 from gi.repository import Gdk, Gio, Gtk, Pango
 from projecttreeview import ProjectTreeView
 from editortextview import EditorTextView
@@ -10,42 +12,14 @@ class NotebookApp(Gtk.Application):
 
     def __init__(self):
         Gtk.Application.__init__(self, application_id="apps.notebook",
-                                 flags=Gio.ApplicationFlags.FLAGS_NONE)
+                                 flags=Gio.ApplicationFlags.HANDLES_OPEN)
         self.connect("activate", self.on_activate)
-###        self.connect("startup", self.on_startup)
-        #self.connect("delete-event", Gtk.main_quit)
+        self.connect("open", self.on_open)
 
-    def on_activate(self, data=None):
+        self.builder = Gtk.Builder.new_from_file("notebook.ui")
+        self.builder.connect_signals(self)
 
-        ### self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-        ### self.window.set_title("TextView Example")
-        ### self.window.connect("delete-event", Gtk.main_quit)
-        ### self.add_window(self.window)
-
-        ### self.window.set_default_size(-1, 350)
-
-        ### self.grid = Gtk.Grid()
-        ### self.window.add(self.grid)
-
-        ### self.projecttreeview = ProjectTreeView()
-        ### self.projecttreeview.set_property('width-request', 200)
-        ### self.grid.attach(self.projecttreeview, 0, 0, 1, 2)
-        ### #self.create_textview()
-
-        ### self.editortextview = self.projecttreeview.get_editor_widget()
-        ### self.grid.attach(self.editortextview, 1, 1, 2, 1)
-
-        ### #assert (self.editortextview is not None)
-        ### self.create_toolbar(None)
-
-        ### self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
-        ### self.window.connect('key-press-event', self.on_key_press_event)
-        ### self.window.show_all()
-        builder = Gtk.Builder.new_from_file("notebook.ui")
-        builder.connect_signals(self)
-
-        self.projecttreeview = builder.get_object("projecttreeview1")
-#        self.editortextview = self.projecttreeview.get_editor_widget()
+        self.projecttreeview = self.builder.get_object("projecttreeview1")
         self.projecttreeview.connect('subdoc-inserted', self.on_subdoc_inserted)
         self.projecttreeview.connect('subdoc-deleted', self.on_subdoc_deleted)
         self.projecttreeview.connect('subdoc-changed', self.on_subdoc_changed)
@@ -54,30 +28,29 @@ class NotebookApp(Gtk.Application):
         self.projecttreeview.connect('subdoc-order-changed', self.on_subdoc_order_changed)
         self.projecttreeview.connect('subdoc-selection-changed', self.on_subdoc_selection_changed)
 
-        self.textview = builder.get_object("editortextview1")
+        self.textview = self.builder.get_object("editortextview1")
 
-        self.hpaned = builder.get_object("paned1")
+        self.hpaned = self.builder.get_object("paned1")
         self.hpaned.set_position(200)
-        #self.hpaned.pack2(self.editortextview, True, True) # resize on, shrink on
-        #self.grid.attach(self.editortextview, 1, 1, 2, 1)
 
-        self.window = builder.get_object("window1")
+    def on_activate(self, data=None):
+
+        self.window = self.builder.get_object("window1")
         self.window.show_all()
-        self.add_window(self.window)
-        pass
 
-###    def on_startup(self, data=None):
-###        builder = Gtk.Builder.new_from_file("notebook.ui")
-###        self.window = builder.get_object("applicationwindow1")
-###
-###        #self.window.connect("delete-event", Gtk.main_quit)
-###
-###        self.window.set_default_size(-1, 350)
-###        self.window.show_all()
-###
-###        #self.add_window(self.window)
+        self.add_window(self.window)
+
+    def on_open(self, application, files, hint, data):
+
+        for f in files:
+            print("cmdline ask open: ", f.get_parse_name())
+            self.projecttreeview.load_from_file(f.get_parse_name())
+            break # todo: multiple project support
+        
+        self.activate()
 
     def create_toolbar(self, editortextview):
+
         toolbar = Gtk.Toolbar()
         self.grid.attach(toolbar, 1, 0, 2, 1)
 
@@ -139,9 +112,6 @@ class NotebookApp(Gtk.Application):
         save_btn.connect("clicked", self.on_save_clicked)
         toolbar.insert(save_btn, 12)
 
-#    def create_textview(self):
-#        self.editortextview = EditorTextView()
-#        self.grid.attach(self.editortextview, 1, 1, 2, 1)
 
     def on_subdoc_inserted(self, projecttreeview, docid):
         print('*** on_subdoc_inserted signal received, docid = ' + str(docid))
@@ -273,5 +243,5 @@ class NotebookApp(Gtk.Application):
 
 if __name__ == "__main__":
     app = NotebookApp()
-    app.run(None)
+    app.run(sys.argv)
 

@@ -2,35 +2,57 @@
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
-from gi.repository import Gdk, Gtk, Pango
+import sys
+
+from gi.repository import Gdk, Gio, Gtk, Pango
 from projecttreeview import ProjectTreeView
 from editortextview import EditorTextView
 
-class TextViewWindow(Gtk.Window):
+class NotebookApp(Gtk.Application):
 
     def __init__(self):
-        Gtk.Window.__init__(self, title="TextView Example")
+        Gtk.Application.__init__(self, application_id="apps.notebook",
+                                 flags=Gio.ApplicationFlags.HANDLES_OPEN)
+        self.connect("activate", self.on_activate)
+        self.connect("open", self.on_open)
 
-        self.set_default_size(-1, 350)
+        self.builder = Gtk.Builder.new_from_file("notebook.ui")
+        self.builder.connect_signals(self)
 
-        self.grid = Gtk.Grid()
-        self.add(self.grid)
+        self.projecttreeview = self.builder.get_object("projecttreeview1")
+        self.projecttreeview.connect('subdoc-inserted', self.on_subdoc_inserted)
+        self.projecttreeview.connect('subdoc-deleted', self.on_subdoc_deleted)
+        self.projecttreeview.connect('subdoc-changed', self.on_subdoc_changed)
+        self.projecttreeview.connect('subdoc-load-from-file', self.on_subdoc_load_from_file)
+        self.projecttreeview.connect('subdoc-save-to-file', self.on_subdoc_save_to_file)
+        self.projecttreeview.connect('subdoc-order-changed', self.on_subdoc_order_changed)
+        self.projecttreeview.connect('subdoc-selection-changed', self.on_subdoc_selection_changed)
 
-        self.projecttreeview = ProjectTreeView()
-        self.projecttreeview.set_property('width-request', 200)
-        self.grid.attach(self.projecttreeview, 0, 0, 1, 2)
-        #self.create_textview()
+        self.textview = self.builder.get_object("editortextview1")
 
-        self.editortextview = self.projecttreeview.get_editor_widget()
-        self.grid.attach(self.editortextview, 1, 1, 2, 1)
+        self.hpaned = self.builder.get_object("paned1")
+        self.hpaned.set_position(200)
 
-        #assert (self.editortextview is not None)
-        self.create_toolbar(None)
+    def on_activate(self, data=None):
 
-        self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
-        self.connect('key-press-event', self.on_key_press_event)
+        accel = self.builder.get_object("accelgroup1")
+        self.window = self.builder.get_object("window1")
+        self.window.add_accel_group(accel)
+        self.window.show_all()
+
+        self.add_window(self.window)
+
+    def on_open(self, application, files, hint, data):
+
+        for f in files:
+            print("cmdline ask open: ", f.get_parse_name())
+            self.projecttreeview.load_from_file(f.get_parse_name())
+            break # todo: multiple project support
+        
+        self.activate()
 
     def create_toolbar(self, editortextview):
+
         toolbar = Gtk.Toolbar()
         self.grid.attach(toolbar, 1, 0, 2, 1)
 
@@ -92,9 +114,46 @@ class TextViewWindow(Gtk.Window):
         save_btn.connect("clicked", self.on_save_clicked)
         toolbar.insert(save_btn, 12)
 
-#    def create_textview(self):
-#        self.editortextview = EditorTextView()
-#        self.grid.attach(self.editortextview, 1, 1, 2, 1)
+
+    def on_subdoc_inserted(self, projecttreeview, docid):
+        print('*** on_subdoc_inserted signal received, docid = ' + str(docid))
+        self.textview.subdoc_new(docid)
+        # send selection instead...
+        #self.textview.set_visible(docid)
+        pass
+
+    def on_subdoc_deleted(self, projecttreeview, docid):
+        print('*** on_subdoc_deleted signal received, docid = ' + str(docid))
+        #self.textview.set_visible(None)
+        pass
+
+    def on_subdoc_changed(self, projecttreeview, docid):
+        print('*** on_subdoc_changed signal received, docid = ' + str(docid))
+        pass
+
+    def on_subdoc_load_from_file(self, projecttreeview, docid, filename):
+        print('*** on_subdoc_load_from_file signal received, docid = ' + str(docid))
+        print('filename = ' + str(filename))
+        self.textview.subdoc_load_from_file(docid, filename)
+        pass
+
+    def on_subdoc_save_to_file(self, projecttreeview, docid, filename):
+        print('*** on_subdoc_save_to_file signal received, docid = ' + str(docid))
+        print('filename = ' + str(filename))
+        self.textview.subdoc_save_to_file(docid, filename)
+
+    def on_subdoc_order_changed(self, projecttreeview):
+        print('*** on_subdoc_order_changed signal received')
+        pass
+
+    def on_subdoc_selection_changed(self, projecttreeview):
+        print('*** on_subdoc_selection_changed signal received')
+        sel_list = projecttreeview.get_selection_list()
+        print(len(sel_list), sel_list)
+        if len(sel_list) == 0:
+            self.textview.set_visible(None)
+        else:
+            self.textview.set_visible(sel_list[0])
 
     def on_button_clicked(self, widget, tag):
         self.editortextview.on_apply_tag(widget, tag)
@@ -106,7 +165,7 @@ class TextViewWindow(Gtk.Window):
         self.editortextview.on_justify_toggled(widget, justification)
 
     def on_open_clicked(self, widget):
-        dialog = Gtk.FileChooserDialog("Please choose a file", self,
+        dialog = Gtk.FileChooserDialog("Please choose a file", self.window,
             Gtk.FileChooserAction.OPEN,
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
              Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
@@ -126,8 +185,8 @@ class TextViewWindow(Gtk.Window):
 
         dialog.destroy()
 
-    def on_save_clicked(self, widget):
-        dialog = Gtk.FileChooserDialog("Save file", self,
+    def on_save_clicked(self, widget, force_dialog = False):
+        dialog = Gtk.FileChooserDialog("Save file", self.window,
         Gtk.FileChooserAction.SAVE,
         (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
          Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
@@ -165,12 +224,26 @@ class TextViewWindow(Gtk.Window):
 
         return False
 
+    def on_menuitem_project_new_activate(self, item):
+        pass
+
+    def on_menuitem_project_open_activate(self, item):
+        self.on_open_clicked(item)
+
+    def on_menuitem_project_save_activate(self, item):
+        self.on_save_clicked(item)
+
+    def on_menuitem_project_saveas_activate(self, item):
+        self.on_save_clicked(item, True)
+
+    def on_menuitem_app_quit_activate(self, item):
+        self.quit()
+
     def set_editor_widget(self, widget):
         self.editortextview = widget
         #self.grid.attach(self.editortextview, 1, 1, 2, 1)
 
+if __name__ == "__main__":
+    app = NotebookApp()
+    app.run(sys.argv)
 
-win = TextViewWindow()
-win.connect("delete-event", Gtk.main_quit)
-win.show_all()
-Gtk.main()

@@ -2,9 +2,12 @@
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
-from gi.repository import Gdk, Gtk, Pango
+from gi.repository import Gdk, Gtk, GtkSource, Pango
+
+from editortextbuffer import EditorTextBuffer
 
 class EditorTextView(Gtk.ScrolledWindow):
+    __gtype_name__ = 'EditorTextView'
 
     def __init__(self):
         Gtk.ScrolledWindow.__init__(self)
@@ -14,65 +17,54 @@ class EditorTextView(Gtk.ScrolledWindow):
         self.set_hexpand(True)
         self.set_vexpand(True)
 
-        self.textview = Gtk.TextView()
+        self.textbuffers = {} #EditorTextBuffer()
+        self.textbuffer_visibleid = -1 # -1 means an image is displayed
+
+        self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+
+        self.textview = GtkSource.View()
         self.textview.set_wrap_mode(Gtk.WrapMode.WORD)
-        self.textbuffer = self.textview.get_buffer()
-        self.textbuffer.set_text("")
-        self.add(self.textview)
+        self.textview.connect('key-press-event', self.on_key_press_event)
+        self.textview.show()
 
-        self.tag_bold = self.textbuffer.create_tag("bold",
-            weight=Pango.Weight.BOLD)
-        self.tag_italic = self.textbuffer.create_tag("italic",
-            style=Pango.Style.ITALIC)
-        self.tag_underline = self.textbuffer.create_tag("underline",
-            underline=Pango.Underline.SINGLE)
+        img = Gtk.Image.new_from_file("oshw-logo-800-px.png")
+        vp = Gtk.Viewport()
+        vp.add(img)
+        self.image = vp
+        self.image.show()
 
-    def get_tag_bold(self):
-        return self.tag_bold
-
-    def get_tag_italic(self):
-        return self.tag_italic
-
-    def get_tag_underline(self):
-        return self.tag_underline
-
-    def on_apply_tag(self, widget, tag):
-        bounds = self.textbuffer.get_selection_bounds()
-        if len(bounds) != 0:
-            start, end = bounds
-            self.textbuffer.apply_tag(tag, start, end)
-
-    def on_remove_all_tags(self, widget):
-        bounds = self.textbuffer.get_selection_bounds()
-        if len(bounds) != 0:
-            start, end = bounds
-            self.textbuffer.remove_all_tags(start, end)
+        self.add(self.image)
 
     def on_justify_toggled(self, widget, justification):
         self.textview.set_justification(justification)
 
-    def load_from_file(self, filename):
-        with open(filename, 'r') as f:
-            data = f.read()
-            self.textbuffer.set_text("")
-            emptyBuffer = self.textbuffer
-            format = emptyBuffer.register_deserialize_tagset()
-            self.textbuffer.deserialize(emptyBuffer,
-                format, emptyBuffer.get_end_iter(), data)
+    def subdoc_new(self, docid):
+        self.textbuffers[docid] = EditorTextBuffer()
 
-    def save_to_file(self, filename):
-        start_iter = self.textbuffer.get_start_iter()
-        end_iter = self.textbuffer.get_end_iter()
-        format = self.textbuffer.register_serialize_tagset()
-        text = self.textbuffer.serialize(self.textbuffer,
-            format, start_iter, end_iter)
-        with open(filename, 'w') as f:
-            f.write(text)
+    def set_visible(self, docid):
+        #print(">>> set_visible = " + str(docid))
+        visid = self.textbuffer_visibleid
+        if visid == -1 and docid is not None:
+            assert(self.textbuffers[docid] is not None)
+            self.remove(self.image)
+            self.add(self.textview)
+            self.textbuffer_visibleid = docid
+        elif visid != -1 and docid is None:
+            self.remove(self.textview)
+            self.add(self.image)
+            self.textbuffer_visibleid = -1
 
-    def insert_pixbuf_at_cursor(self, pixbuf):
-        mark = self.textbuffer.get_mark('insert')
-        cur_iter = self.textbuffer.get_iter_at_mark(mark)
-        self.textbuffer.insert_pixbuf(cur_iter, pixbuf)
+        if docid:
+            self.textview.set_buffer(self.textbuffers[docid])
+            self.textbuffer_visibleid = docid
+
+    def subdoc_load_from_file(self, docid, filename):
+        assert(self.textbuffers[docid] is not None)
+        self.textbuffers[docid].load_from_file(filename)
+
+    def subdoc_save_to_file(self, docid, filename):
+        assert(self.textbuffers[docid] is not None)
+        self.textbuffers[docid].save_to_file(filename)
 
     def on_key_press_event(self, window, event):
         key = Gdk.keyval_name(event.keyval)
@@ -81,21 +73,16 @@ class EditorTextView(Gtk.ScrolledWindow):
         #print(key + str(event.state))
 
         if event.state & Gdk.ModifierType.CONTROL_MASK and key in ('o', 's', 'v'):
-            if key == 'o':
-                self.on_open_clicked(None)
-            elif key == 's':
-                self.on_save_clicked(None)
-            elif key == 'v':
+            if key == 'v':
                 pixbuf = self.clipboard.wait_for_image()
-                if pixbuf != None:
-                    mark = self.textbuffer.get_mark('insert')
-                    cur_iter = self.textbuffer.get_iter_at_mark(mark)
-                    self.textbuffer.insert_pixbuf(cur_iter, pixbuf)
+                visid = self.textbuffer_visibleid
+                if pixbuf != None and visid != -1:
+                    self.textbuffers[visid].insert_pixbuf_at_cursor(pixbuf)
                 else:
                     return False
 
-            #print ('event catched')
-            return True
+                #print ('event catched')
+                return True
 
         return False
 

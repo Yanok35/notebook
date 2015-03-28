@@ -2,7 +2,7 @@
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
-from gi.repository import Gdk, Gtk, Pango
+from gi.repository import Gdk, Gtk, GtkSource, Pango
 
 from editortextbuffer import EditorTextBuffer
 
@@ -22,7 +22,7 @@ class EditorTextView(Gtk.ScrolledWindow):
 
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 
-        self.textview = Gtk.TextView()
+        self.textview = GtkSource.View()
         self.textview.set_wrap_mode(Gtk.WrapMode.WORD)
         self.textview.connect('key-press-event', self.on_key_press_event)
         self.textview.show()

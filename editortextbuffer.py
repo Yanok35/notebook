@@ -2,9 +2,9 @@
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
-from gi.repository import Gdk, Gtk, Pango
+from gi.repository import Gdk, Gtk, GtkSource, Pango
 
-class EditorTextBuffer(Gtk.TextBuffer):
+class EditorTextBuffer(GtkSource.Buffer):
     __gtype_name__ = 'EditorTextBuffer'
 
     def __init__(self):
@@ -44,9 +44,11 @@ class EditorTextBuffer(Gtk.TextBuffer):
     def load_from_file(self, filename):
         with open(filename, 'r') as f:
             data = f.read()
+            self.begin_not_undoable_action()
             self.set_text("")
             format = self.register_deserialize_tagset()
             self.deserialize(self, format, self.get_end_iter(), data)
+            self.end_not_undoable_action()
 
     def save_to_file(self, filename):
         start_iter = self.get_start_iter()

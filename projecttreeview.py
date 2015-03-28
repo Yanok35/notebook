@@ -19,6 +19,8 @@ class ProjectTreeView(Gtk.Box):
         str('subdoc-inserted'): (GObject.SIGNAL_RUN_FIRST, None, (int,)),
         str('subdoc-deleted'): (GObject.SIGNAL_RUN_FIRST, None, (int,)),
         str('subdoc-changed'): (GObject.SIGNAL_RUN_FIRST, None, (int,)),
+        str('subdoc-load-from-file'): (GObject.SIGNAL_RUN_FIRST, None, (int, str)),
+        str('subdoc-save-to-file'): (GObject.SIGNAL_RUN_FIRST, None, (int, str)),
         str('subdoc-order-changed'): (GObject.SIGNAL_RUN_FIRST, None, ()), # list of ids to retreive
         str('subdoc-selection-changed'): (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
@@ -92,6 +94,7 @@ class ProjectTreeView(Gtk.Box):
         # Create a new subdocument from file
         filename = os.path.join(filesdir, str(docid) + ".subdoc")
         self.emit('subdoc-inserted', docid)
+        self.emit('subdoc-load-from-file', docid, str(filename))
 
         ### editortextview = EditorTextView()
         ### editortextview.load_from_file(filename)
@@ -156,6 +159,7 @@ class ProjectTreeView(Gtk.Box):
         print("doc id ", docid, " save to ", filename)
         ### (editortextview, _dont_care_) = self.subdocs_refs[int(docid)]
         ### editortextview.save_to_file(filename)
+        self.emit('subdoc-save-to-file', int(docid), str(filename))
 
         for i in range(0, self.treestore.iter_n_children(iter)):
             child = self.treestore.iter_nth_child(iter, i)

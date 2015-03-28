@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Generated with glade 3.16.1 -->
 <interface>
-  <!-- interface-requires glade_custom_catalog 0.0 -->
   <requires lib="gtk+" version="3.10"/>
+  <!-- interface-requires glade_custom_catalog 0.0 -->
+  <object class="GtkAccelGroup" id="accelgroup1"/>
   <object class="GtkWindow" id="window1">
     <property name="can_focus">False</property>
     <property name="default_width">800</property>
@@ -33,6 +34,7 @@
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
+                        <property name="accel_group">accelgroup1</property>
                         <signal name="activate" handler="on_menuitem_project_new_activate" swapped="no"/>
                       </object>
                     </child>
@@ -43,6 +45,7 @@
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
+                        <property name="accel_group">accelgroup1</property>
                         <signal name="activate" handler="on_menuitem_project_open_activate" swapped="no"/>
                       </object>
                     </child>
@@ -53,6 +56,7 @@
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
+                        <property name="accel_group">accelgroup1</property>
                         <signal name="activate" handler="on_menuitem_project_save_activate" swapped="no"/>
                       </object>
                     </child>
@@ -63,6 +67,7 @@
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
+                        <property name="accel_group">accelgroup1</property>
                         <signal name="activate" handler="on_menuitem_project_saveas_activate" swapped="no"/>
                       </object>
                     </child>

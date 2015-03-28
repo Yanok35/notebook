@@ -35,7 +35,9 @@ class NotebookApp(Gtk.Application):
 
     def on_activate(self, data=None):
 
+        accel = self.builder.get_object("accelgroup1")
         self.window = self.builder.get_object("window1")
+        self.window.add_accel_group(accel)
         self.window.show_all()
 
         self.add_window(self.window)

@@ -59,8 +59,11 @@ class EditorTextView(Gtk.ScrolledWindow):
         self.image.show()
 
         self.add(self.image)
-        
-        self.txt_tst_buf = ""
+
+        self.paragraphs = [] # list of list : (PangoLayout, unicode)
+        self.para_nb = 0
+        self.para_cursor_idx = 0
+        #self.txt_tst_buf = ""
 
 ##     def on_darea_realize(self, widget):
 ##         print ("realize", widget)
@@ -112,56 +115,73 @@ class EditorTextView(Gtk.ScrolledWindow):
         assert(self.textbuffers[docid] is not None)
         return self.textbuffers[docid].get_content_as_text()
 
+    def paragraph_new(self):
+
+        cr = self.darea.get_window().cairo_create()
+
+        layout = PangoCairo.create_layout(cr)
+        text = unicode(str(""), encoding='utf-8')
+        self.paragraphs.append([layout, text])
+        self.para_nb += 1
+        #self.self.para_cursor_idx += 1
+
     def on_draw(self, widget, ctx):
+
+        # Cannot be empty ?
+        if self.para_nb == 0:
+            self.paragraph_new()
         #print(ctx)
         # "ctx" is "cairo.Context" object
 
-        layout = PangoCairo.create_layout(ctx)
-        #pangoctx = layout.get_context()
-        #ink_rect, logical_rect = layout.get_extents() # ret in Pango units
-        #print(ink_rect.width, ink_rect.height, logical_rect.width, logical_rect.height)
-        #ink_rect, logical_rect = layout.get_pixel_extents() # ret in pixels unit
-        #print(ink_rect.width, ink_rect.height, logical_rect.width, logical_rect.height)
+        #layout = PangoCairo.create_layout(ctx)
 
         # Following draw a gray background
         rect = widget.get_allocation() # return CairoRectangleInt
         #print(rect.x, rect.y, rect.width, rect.height)
         ctx.save()
-        ctx.set_source_rgb(0.8, 0.8, 0.8)
+        ctx.set_source_rgb(0.9, 0.9, 0.9)
         ctx.rectangle(rect.x, rect.y, rect.width, rect.height)
         ctx.fill()
         ctx.restore()
 
-        # Draw a paragraph 'containers', with margin_x, margin_y
-        ctx.translate(10, 20)
-        para_width = rect.width - 10 * 2
-        #print(para_width)
+        # Margins for whole paragraph list
+        SUBDOC_WIDTH_MARGIN_PX = 10
+        ctx.translate(SUBDOC_WIDTH_MARGIN_PX, 20)
 
-        ## helper to draw cursor with rectangle...
-        #strong_rect, weak_rect = get_cursor_position(para_idx)
+        desc = Pango.font_description_from_string("Times 16")
 
-        desc = Pango.font_description_from_string("Times 20")
-        layout.set_font_description(desc)
-        layout.set_width(para_width * Pango.SCALE)
-        layout.set_wrap(Pango.WrapMode.WORD_CHAR)
-        layout.set_text(self.txt_tst_buf, -1)
-        _w, _h = layout.get_size()
-        textwidth  = _w / Pango.SCALE
-        textheight = _h / Pango.SCALE
+        for layout, text in self.paragraphs:
+            # Draw a paragraph 'containers', with margin_x, margin_y
+            para_width = rect.width - SUBDOC_WIDTH_MARGIN_PX * 2
+            #print(para_width)
 
-        # Fill the paragraph background in white
-        ctx.set_source_rgb(1,1,1)
-        ctx.rectangle(0, 0, para_width, textheight)
-        ctx.fill()
+            ## helper to draw cursor with rectangle...
+            #strong_rect, weak_rect = get_cursor_position(para_idx)
 
-        # Draw a black line to delimit the paragraph position
-        ctx.set_source_rgb(0, 0, 0)
-        ctx.rectangle(0, 0, para_width, textheight)
-        ctx.set_line_width(1)
-        ctx.stroke()
+            #desc = Pango.font_description_from_string("Times 20")
+            layout.set_font_description(desc)
+            layout.set_width(para_width * Pango.SCALE)
+            layout.set_wrap(Pango.WrapMode.WORD_CHAR)
+            layout.set_text(text, -1)
+            _w, _h = layout.get_size()
+            textwidth  = _w / Pango.SCALE
+            textheight = _h / Pango.SCALE
 
-        PangoCairo.update_layout(ctx, layout)
-        PangoCairo.show_layout(ctx, layout)
+            # Fill the paragraph background in white
+            ctx.set_source_rgb(0.9, 0.9, 0.9)
+            ctx.rectangle(0, 0, para_width, textheight)
+            ctx.fill()
+
+            # Draw a black line to delimit the paragraph position
+            ctx.set_source_rgb(0, 0, 0)
+            ctx.rectangle(0, 0, para_width, textheight)
+            ctx.set_line_width(0.5)
+            ctx.stroke()
+
+            PangoCairo.update_layout(ctx, layout)
+            PangoCairo.show_layout(ctx, layout)
+            
+            ctx.translate(0, 10 + textheight)
 
     def on_enter_notify_event(self, widget, event):
         print("notify")
@@ -179,12 +199,21 @@ class EditorTextView(Gtk.ScrolledWindow):
         #print(event.keyval)
         entry = Gdk.keyval_to_unicode(event.keyval)
         print(entry)
-        
+
+        #self.paragraphs[self.para_cursor_idx]
         #if event.keyval in range(ord('a'), ord('z')):
         if entry >= 32:
-            self.txt_tst_buf += unicode(event.string, encoding='utf-8')
+            self.paragraphs[self.para_cursor_idx][1] += unicode(event.string, encoding='utf-8')
         elif entry == 8: #backspace
-            self.txt_tst_buf = self.txt_tst_buf[:-1]
+            if len(self.paragraphs[self.para_cursor_idx][1]):
+                self.paragraphs[self.para_cursor_idx][1] = (self.paragraphs[self.para_cursor_idx][1])[:-1]
+            elif self.para_cursor_idx:
+                del self.paragraphs[self.para_cursor_idx]
+                self.para_cursor_idx -= 1
+                self.para_nb -= 1
+        elif entry == 13: # carriage return
+            self.paragraph_new()
+            self.para_cursor_idx += 1
 
         self.darea.queue_draw()
 

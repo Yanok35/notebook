@@ -7,9 +7,12 @@
 from __future__ import unicode_literals
 
 import cairo
-from gi.repository import Gdk, Gtk, Pango, PangoCairo
+from gi.repository import Gdk, GLib, Gtk, Pango, PangoCairo
 
 from editortextbuffer import EditorTextBuffer
+
+BLINK_MS = 250
+SUBDOC_WIDTH_MARGIN_PX = 10
 
 class EditorTextView(Gtk.ScrolledWindow):
     __gtype_name__ = 'EditorTextView'
@@ -63,7 +66,10 @@ class EditorTextView(Gtk.ScrolledWindow):
         self.paragraphs = [] # list of list : (PangoLayout, unicode)
         self.para_nb = 0
         self.para_cursor_idx = 0
-        #self.txt_tst_buf = ""
+
+        self.cursor_blink_state = False
+        self.thr_blink = Gdk.threads_add_timeout(
+            GLib.PRIORITY_DEFAULT_IDLE, BLINK_MS, self.on_blink_cb, self)
 
 ##     def on_darea_realize(self, widget):
 ##         print ("realize", widget)
@@ -125,6 +131,15 @@ class EditorTextView(Gtk.ScrolledWindow):
         self.para_nb += 1
         #self.self.para_cursor_idx += 1
 
+    def on_blink_cb(self, widget):
+        #print("blink", self.cursor_blink_state)
+
+        self.cursor_blink_state = not self.cursor_blink_state
+        self.darea.queue_draw()
+
+        self.thr_blink = Gdk.threads_add_timeout(
+            GLib.PRIORITY_DEFAULT_IDLE, BLINK_MS, self.on_blink_cb, self)
+
     def on_draw(self, widget, ctx):
 
         # Cannot be empty ?
@@ -139,29 +154,27 @@ class EditorTextView(Gtk.ScrolledWindow):
         rect = widget.get_allocation() # return CairoRectangleInt
         #print(rect.x, rect.y, rect.width, rect.height)
         ctx.save()
-        ctx.set_source_rgb(0.9, 0.9, 0.9)
+        ctx.set_source_rgb(0.8, 0.8, 0.8)
         ctx.rectangle(rect.x, rect.y, rect.width, rect.height)
         ctx.fill()
         ctx.restore()
 
         # Margins for whole paragraph list
-        SUBDOC_WIDTH_MARGIN_PX = 10
         ctx.translate(SUBDOC_WIDTH_MARGIN_PX, 20)
 
         desc = Pango.font_description_from_string("Times 16")
 
+        i = 0
         for layout, text in self.paragraphs:
             # Draw a paragraph 'containers', with margin_x, margin_y
             para_width = rect.width - SUBDOC_WIDTH_MARGIN_PX * 2
             #print(para_width)
 
-            ## helper to draw cursor with rectangle...
-            #strong_rect, weak_rect = get_cursor_position(para_idx)
-
             #desc = Pango.font_description_from_string("Times 20")
             layout.set_font_description(desc)
             layout.set_width(para_width * Pango.SCALE)
             layout.set_wrap(Pango.WrapMode.WORD_CHAR)
+            layout.set_justify(True)
             layout.set_text(text, -1)
             _w, _h = layout.get_size()
             textwidth  = _w / Pango.SCALE
@@ -173,15 +186,29 @@ class EditorTextView(Gtk.ScrolledWindow):
             ctx.fill()
 
             # Draw a black line to delimit the paragraph position
-            ctx.set_source_rgb(0, 0, 0)
-            ctx.rectangle(0, 0, para_width, textheight)
-            ctx.set_line_width(0.5)
-            ctx.stroke()
+            if i == self.para_cursor_idx: # and self.cursor_blink_state:
+                ctx.set_source_rgb(0, 0, 0)
+                ctx.rectangle(0, 0, para_width, textheight)
+                ctx.set_line_width(0.5)
+                ctx.stroke()
 
+            ## helper to draw cursor with rectangle...
+            if i == self.para_cursor_idx and not self.cursor_blink_state:
+                ctx.set_source_rgb(0, 0, 0)
+                ctx.set_line_width(1)
+                strong_rect, weak_rect = layout.get_cursor_pos(len(text))
+                ctx.rectangle(strong_rect.x / Pango.SCALE,
+                              strong_rect.y / Pango.SCALE,
+                              strong_rect.width / Pango.SCALE,
+                              strong_rect.height / Pango.SCALE)
+                ctx.stroke()
+
+            ctx.set_source_rgb(0, 0, 0)
             PangoCairo.update_layout(ctx, layout)
             PangoCairo.show_layout(ctx, layout)
             
             ctx.translate(0, 10 + textheight)
+            i += 1
 
     def on_enter_notify_event(self, widget, event):
         print("notify")

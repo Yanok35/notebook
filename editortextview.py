@@ -135,10 +135,19 @@ class EditorTextView(Gtk.ScrolledWindow):
 
         # debug string :
         print(key + str(event.state))
-        print(event.keyval)
+        #print(event.keyval)
+        entry = Gdk.keyval_to_unicode(event.keyval)
+        print(entry)
         
         #if event.keyval in range(ord('a'), ord('z')):
-        self.txt_tst_buf += key
+        if entry >= 32:
+            #self.txt_tst_buf += unicode(entry, encoding='utf-8') #key
+            #self.txt_tst_buf += key
+            #self.txt_tst_buf += unicode(chr(entry), encoding='utf-8') #key
+            self.txt_tst_buf += unicode(event.string, encoding='utf-8')
+        elif entry == 8: #backspace
+            self.txt_tst_buf = self.txt_tst_buf[:-1]
+
         self.darea.queue_draw()
 
         return True

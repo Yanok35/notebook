@@ -58,6 +58,12 @@ class EditorTextBuffer(GtkSource.Buffer):
         with open(filename, 'w') as f:
             f.write(text)
 
+    def get_content_as_text(self):
+        start_iter = self.get_start_iter()
+        end_iter = self.get_end_iter()
+        include_hidden_chars = False
+        return self.get_text(start_iter, end_iter, include_hidden_chars)
+
     def insert_pixbuf_at_cursor(self, pixbuf):
         mark = self.get_mark('insert')
         cur_iter = self.get_iter_at_mark(mark)

@@ -113,14 +113,55 @@ class EditorTextView(Gtk.ScrolledWindow):
         return self.textbuffers[docid].get_content_as_text()
 
     def on_draw(self, widget, ctx):
-        print(ctx)
+        #print(ctx)
+        # "ctx" is "cairo.Context" object
+
+        layout = PangoCairo.create_layout(ctx)
+        #pangoctx = layout.get_context()
+        #ink_rect, logical_rect = layout.get_extents() # ret in Pango units
+        #print(ink_rect.width, ink_rect.height, logical_rect.width, logical_rect.height)
+        #ink_rect, logical_rect = layout.get_pixel_extents() # ret in pixels unit
+        #print(ink_rect.width, ink_rect.height, logical_rect.width, logical_rect.height)
+
+        # Following draw a gray background
+        rect = widget.get_allocation() # return CairoRectangleInt
+        #print(rect.x, rect.y, rect.width, rect.height)
+        ctx.save()
+        ctx.set_source_rgb(0.8, 0.8, 0.8)
+        ctx.rectangle(rect.x, rect.y, rect.width, rect.height)
+        ctx.fill()
+        ctx.restore()
+
+        # Draw a paragraph 'containers', with margin_x, margin_y
+        ctx.translate(10, 20)
+        para_width = rect.width - 10 * 2
+        #print(para_width)
+
+        ## helper to draw cursor with rectangle...
+        #strong_rect, weak_rect = get_cursor_position(para_idx)
+
+        desc = Pango.font_description_from_string("Times 20")
+        layout.set_font_description(desc)
+        layout.set_width(para_width * Pango.SCALE)
+        layout.set_wrap(Pango.WrapMode.WORD_CHAR)
+        layout.set_text(self.txt_tst_buf, -1)
+        _w, _h = layout.get_size()
+        textwidth  = _w / Pango.SCALE
+        textheight = _h / Pango.SCALE
+
+        # Fill the paragraph background in white
+        ctx.set_source_rgb(1,1,1)
+        ctx.rectangle(0, 0, para_width, textheight)
+        ctx.fill()
+
+        # Draw a black line to delimit the paragraph position
         ctx.set_source_rgb(0, 0, 0)
-        ctx.select_font_face("Sans", cairo.FONT_SLANT_NORMAL,
-            cairo.FONT_WEIGHT_NORMAL)
-        ctx.set_font_size(12)
-        ctx.move_to(10, 20)
-        #ctx.show_text("This is hello")
-        ctx.show_text(self.txt_tst_buf)
+        ctx.rectangle(0, 0, para_width, textheight)
+        ctx.set_line_width(1)
+        ctx.stroke()
+
+        PangoCairo.update_layout(ctx, layout)
+        PangoCairo.show_layout(ctx, layout)
 
     def on_enter_notify_event(self, widget, event):
         print("notify")
@@ -141,9 +182,6 @@ class EditorTextView(Gtk.ScrolledWindow):
         
         #if event.keyval in range(ord('a'), ord('z')):
         if entry >= 32:
-            #self.txt_tst_buf += unicode(entry, encoding='utf-8') #key
-            #self.txt_tst_buf += key
-            #self.txt_tst_buf += unicode(chr(entry), encoding='utf-8') #key
             self.txt_tst_buf += unicode(event.string, encoding='utf-8')
         elif entry == 8: #backspace
             self.txt_tst_buf = self.txt_tst_buf[:-1]

@@ -23,6 +23,8 @@ class ProjectTreeView(Gtk.Box):
         str('subdoc-save-to-file'): (GObject.SIGNAL_RUN_FIRST, None, (int, str)),
         str('subdoc-order-changed'): (GObject.SIGNAL_RUN_FIRST, None, ()), # list of ids to retreive
         str('subdoc-selection-changed'): (GObject.SIGNAL_RUN_FIRST, None, ()),
+
+        str('project-export'): (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
     def __init__(self):
@@ -63,9 +65,12 @@ class ProjectTreeView(Gtk.Box):
         self.button_del_doc = Gtk.ToolButton.new_from_stock(Gtk.STOCK_REMOVE)
         self.button_del_doc.set_sensitive(False)
         self.button_del_doc.connect("clicked", self.on_button_del_doc_clicked)
+        self.button_export_doc = Gtk.ToolButton.new_from_stock(Gtk.STOCK_EXECUTE)
+        self.button_export_doc.connect("clicked", self.on_button_export_doc_clicked)
         toolbar.insert(self.button_add_doc, 0)
         toolbar.insert(self.button_del_doc, 1)
         toolbar.insert(Gtk.SeparatorToolItem(), 2)
+        toolbar.insert(self.button_export_doc, 3)
         self.pack_start(toolbar, False, False, 0)
 
         self.scrolledwindow = Gtk.ScrolledWindow()
@@ -288,6 +293,9 @@ class ProjectTreeView(Gtk.Box):
 
             ### # remove entry in dictionary
             ### del self.subdocs_refs[docid]
+
+    def on_button_export_doc_clicked(self, widget):
+        self.emit('project-export')
 
     def on_treemodel_row_inserted(self, treemodel, path, iter):
         print ("row-inserted", str(path), iter)

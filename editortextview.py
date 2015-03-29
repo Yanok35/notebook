@@ -195,10 +195,10 @@ class EditorTextView(Gtk.ScrolledWindow):
         key = Gdk.keyval_name(event.keyval)
 
         # debug string :
-        print(key + str(event.state))
-        #print(event.keyval)
         entry = Gdk.keyval_to_unicode(event.keyval)
-        print(entry)
+        print(key + "|" + str(event.state) + "|" + str(entry))
+        #print(event.keyval)
+        #print(entry)
 
         #self.paragraphs[self.para_cursor_idx]
         #if event.keyval in range(ord('a'), ord('z')):

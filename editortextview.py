@@ -17,7 +17,7 @@ class EditorTextView(Gtk.ScrolledWindow):
     def __init__(self):
         Gtk.ScrolledWindow.__init__(self)
 
-        self.set_size_request(600, -1)
+        self.set_size_request(400, -1)
 
         self.set_hexpand(True)
         self.set_vexpand(True)
@@ -29,7 +29,7 @@ class EditorTextView(Gtk.ScrolledWindow):
 
         vp = Gtk.Viewport()
         darea = Gtk.DrawingArea()
-        darea.set_size_request(800, 200)
+        darea.set_size_request(400, 2048)
         darea.set_can_focus(True)
 
         darea.connect('draw', self.on_draw)

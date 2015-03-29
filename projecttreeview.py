@@ -208,6 +208,44 @@ class ProjectTreeView(Gtk.Box):
         return retlist
         #return self.current_sel_list
 
+    def rec_treestore_get_doc_list(self, iter):
+        retlist = []
+
+        docname = unicode(self.treestore.get_value(iter, 0), encoding='utf-8')
+        docid = int(self.treestore.get_value(iter, 1))
+
+        retlist.append([docid, docname])
+
+        for i in range(0, self.treestore.iter_n_children(iter)):
+            child = self.treestore.iter_nth_child(iter, i)
+            childlist = self.rec_treestore_get_doc_list(child)
+            for child in childlist:
+                retlist.append(child)
+
+        return retlist
+
+    def get_doc_list(self):
+        retlist = []
+
+        iter = self.treestore.get_iter_first()
+        while iter is not None and self.treestore.iter_is_valid(iter):
+            childlist = self.rec_treestore_get_doc_list(iter)
+
+            for child in childlist:
+                retlist.append(child)
+
+            iter = self.treestore.iter_next(iter)
+
+        print(retlist)
+        return retlist
+
+    def get_docid_list(self):
+        retlist = []
+        doclist = self.get_doc_list()
+        for doc in doclist:
+            retlist.append(doc[0])
+        return retlist
+
 ###    def get_editor_widget(self):
 ###        return self.subdocs_vbox
 

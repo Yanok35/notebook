@@ -27,6 +27,7 @@ class NotebookApp(Gtk.Application):
         self.projecttreeview.connect('subdoc-save-to-file', self.on_subdoc_save_to_file)
         self.projecttreeview.connect('subdoc-order-changed', self.on_subdoc_order_changed)
         self.projecttreeview.connect('subdoc-selection-changed', self.on_subdoc_selection_changed)
+        self.projecttreeview.connect('project-export', self.on_project_export)
 
         self.textview = self.builder.get_object("editortextview1")
 
@@ -154,6 +155,14 @@ class NotebookApp(Gtk.Application):
             self.textview.set_visible(None)
         else:
             self.textview.set_visible(sel_list[0])
+
+    def on_project_export(self, projecttreeview):
+        text = ""
+        docids = projecttreeview.get_docid_list()
+        for docid in docids:
+            text += self.textview.subdoc_get_content_as_text(docid)
+        print text
+        pass
 
     def on_button_clicked(self, widget, tag):
         self.editortextview.on_apply_tag(widget, tag)

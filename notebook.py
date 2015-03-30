@@ -2,11 +2,13 @@
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
-import sys
+import sys, os
 
 from gi.repository import Gdk, Gio, Gtk, Pango
 from projecttreeview import ProjectTreeView
 from editortextview import EditorTextView
+
+APP_TITLE = "Notebook"
 
 class NotebookApp(Gtk.Application):
 
@@ -33,11 +35,14 @@ class NotebookApp(Gtk.Application):
 
         self.hpaned = self.builder.get_object("paned1")
         self.hpaned.set_position(200)
+        
+        self.project_filename = None
 
     def on_activate(self, data=None):
 
         accel = self.builder.get_object("accelgroup1")
         self.window = self.builder.get_object("window1")
+        self.window.set_title(APP_TITLE)
         self.window.add_accel_group(accel)
         self.window.show_all()
 
@@ -48,9 +53,16 @@ class NotebookApp(Gtk.Application):
         for f in files:
             print("cmdline ask open: ", f.get_parse_name())
             self.projecttreeview.load_from_file(f.get_parse_name())
+            self.project_filename = f.get_parse_name()
             break # todo: multiple project support
         
         self.activate()
+        self.update_window_title()
+
+    def update_window_title(self):
+        if self.project_filename:
+            wintitle = os.path.basename(self.project_filename) + ' - ' + APP_TITLE
+            self.window.set_title(wintitle)
 
     def create_toolbar(self, editortextview):
 
@@ -189,26 +201,34 @@ class NotebookApp(Gtk.Application):
             selected_file = dialog.get_filename()
             #self.editortextview.load_from_file(selected_file)
             self.projecttreeview.load_from_file(selected_file)
+
+            self.project_filename = selected_file
+            self.update_window_title()
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
 
         dialog.destroy()
 
     def on_save_clicked(self, widget, force_dialog = False):
-        dialog = Gtk.FileChooserDialog("Save file", self.window,
-        Gtk.FileChooserAction.SAVE,
-        (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-         Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+        if force_dialog or self.project_filename is None:
+            dialog = Gtk.FileChooserDialog("Save file", self.window,
+                            Gtk.FileChooserAction.SAVE,
+                            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                             Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
 
-        response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-            save_file = dialog.get_filename()
-            #self.editortextview.save_to_file(save_file)
-            self.projecttreeview.save_to_file(save_file)
-        elif response == Gtk.ResponseType.CANCEL:
+            response = dialog.run()
+            if response == Gtk.ResponseType.OK:
+                save_file = dialog.get_filename()
+            elif response == Gtk.ResponseType.CANCEL:
+                dialog.destroy()
+                return
             dialog.destroy()
+        else:
+            save_file = self.project_filename
 
-        dialog.destroy()
+        self.projecttreeview.save_to_file(save_file)
+        self.project_filename = save_file
+        self.update_window_title()
 
     def on_key_press_event(self, window, event):
         key = Gdk.keyval_name(event.keyval)
@@ -234,6 +254,7 @@ class NotebookApp(Gtk.Application):
         return False
 
     def on_menuitem_project_new_activate(self, item):
+        #self.project_filename = None
         pass
 
     def on_menuitem_project_open_activate(self, item):

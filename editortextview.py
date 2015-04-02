@@ -127,7 +127,8 @@ class EditorTextView(Gtk.ScrolledWindow):
 
         layout = PangoCairo.create_layout(cr)
         text = unicode(str(""), encoding='utf-8')
-        self.paragraphs.append([layout, text])
+        cursor_ptr = 0
+        self.paragraphs.append([layout, text, cursor_ptr])
         self.para_nb += 1
         #self.self.para_cursor_idx += 1
 
@@ -165,7 +166,7 @@ class EditorTextView(Gtk.ScrolledWindow):
         desc = Pango.font_description_from_string("Times 16")
 
         i = 0
-        for layout, text in self.paragraphs:
+        for layout, text, cursor_ptr in self.paragraphs:
             # Draw a paragraph 'containers', with margin_x, margin_y
             para_width = rect.width - SUBDOC_WIDTH_MARGIN_PX * 2
             #print(para_width)
@@ -196,7 +197,7 @@ class EditorTextView(Gtk.ScrolledWindow):
             if i == self.para_cursor_idx and not self.cursor_blink_state:
                 ctx.set_source_rgb(0, 0, 0)
                 ctx.set_line_width(1)
-                strong_rect, weak_rect = layout.get_cursor_pos(len(text))
+                strong_rect, weak_rect = layout.get_cursor_pos(cursor_ptr)
                 ctx.rectangle(strong_rect.x / Pango.SCALE,
                               strong_rect.y / Pango.SCALE,
                               strong_rect.width / Pango.SCALE,
@@ -230,9 +231,15 @@ class EditorTextView(Gtk.ScrolledWindow):
         #self.paragraphs[self.para_cursor_idx]
         #if event.keyval in range(ord('a'), ord('z')):
         if entry >= 32:
-            self.paragraphs[self.para_cursor_idx][1] += unicode(event.string, encoding='utf-8')
+            text = unicode(event.string, encoding='utf-8')
+            self.paragraphs[self.para_cursor_idx][1] += text
+            text = text.encode('utf_8')
+            self.paragraphs[self.para_cursor_idx][2] += len(text)
         elif entry == 8: #backspace
             if len(self.paragraphs[self.para_cursor_idx][1]):
+                text = (self.paragraphs[self.para_cursor_idx][1])[-1:]
+                text = text.encode('utf_8')
+                self.paragraphs[self.para_cursor_idx][2] -= len(text)
                 self.paragraphs[self.para_cursor_idx][1] = (self.paragraphs[self.para_cursor_idx][1])[:-1]
             elif self.para_cursor_idx:
                 del self.paragraphs[self.para_cursor_idx]

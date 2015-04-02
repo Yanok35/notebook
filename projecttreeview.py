@@ -201,10 +201,11 @@ class ProjectTreeView(Gtk.Box):
 
     def get_selection_list(self):
         retlist = []
-        for treepath in self.current_sel_list:
-            iter = self.treestore.get_iter(treepath)
-            docid = self.treestore.get_value(iter, 1)
-            retlist.append(int(docid))
+        if self.current_sel_list:
+            for treepath in self.current_sel_list:
+                iter = self.treestore.get_iter(treepath)
+                docid = self.treestore.get_value(iter, 1)
+                retlist.append(int(docid))
         return retlist
         #return self.current_sel_list
 

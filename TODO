@@ -1,0 +1,44 @@
+Features
+--------
+
+glisser déposer d'une entrée du projecttreeview
+dans l'éditeur pour insérer une référence croisée.
+
+la suppression d'une entrée dans le projecttreeview fera apparaitre une
+dialog de confirmation, si la section est référencée dans le contenu du doc
+
+
+Les objets paragraphes
+Les objets images
+
+opérations sur les images :
+  1) redimensionner (avec/sans la conservation de l'aspert),
+  2) cropper
+
+Les objets référencables :
+  - Les tableaux
+  - Les images/graphiques
+
+  seront associés à des "séquences" pour leur attribuer une numérotation automatique
+
+Les objets dont le contenu est généré:
+  - insertion de fichiers textes extérieurs, colorizable
+  - résultats d'exécution de scripts python ?
+  -
+
+
+Autres topics (next):
+---------------------
+
+headers
+footers
+notes de bas de pages
+formule mathématiques ?
+
+
+TODO list / bugfixes:
+---------------------
+
+- sauvegarder la sélection dans le projet
+- sélectionner un subdoc déplacé, une fois arrivé à sa destination
+

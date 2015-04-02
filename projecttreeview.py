@@ -12,6 +12,14 @@ from lxml import etree
 
 #from editortextview import EditorTextView
 
+class PTreeView(Gtk.TreeView):
+    def __init__(self):
+        Gtk.TreeView.__init__(self)
+
+    def do_drag_drop(self, context, x, y, time_):
+        Gtk.TreeView.do_drag_drop(self, context, x, y, time_)
+        return False
+
 class ProjectTreeView(Gtk.Box):
     __gtype_name__ = str("ProjectTreeView")
 
@@ -39,10 +47,13 @@ class ProjectTreeView(Gtk.Box):
         self.sigid_row_deleted = self.treestore.connect("row-deleted", self.on_treemodel_row_deleted)
         self.sigid_row_changed = self.treestore.connect("row-changed", self.on_treemodel_row_changed)
 
-        self.treeview = Gtk.TreeView.new_with_model(self.treestore)
+        self.treeview = PTreeView()
+        self.treeview.set_model(self.treestore)
         self.treeview.expand_all()
         self.treeview.set_reorderable(True)
         self.treeview.set_activate_on_single_click(True)
+        self.treeview.connect('drag-begin', self.on_treeview_drag_begin)
+        self.treeview.connect_after('drag-drop', self.on_treeview_drag_drop)
 
         self.treeselection = self.treeview.get_selection()
         self.treeselection.set_mode(Gtk.SelectionMode.MULTIPLE)
@@ -406,6 +417,18 @@ class ProjectTreeView(Gtk.Box):
 
     def on_treemodel_row_changed(self, treemodel, path, iter):
         print ("row-changed", str(path), iter)
+
+    def on_treeview_drag_begin(self, widget, context):
+        store, path_list = self.treeselection.get_selected_rows()
+        self.drag_treepath_begin = []
+        for path in path_list:
+            iter = self.treestore.get_iter(path)
+            docid = int(self.treestore.get_value(iter, 1))
+            self.drag_treepath_begin.append(docid)
+
+    def on_treeview_drag_drop(self, widget, context, x, y, time):
+        self.set_selection_list(self.drag_treepath_begin)
+        return False
 
     def on_treeview_selection_changed(self, treesel):
         print("selection changed")

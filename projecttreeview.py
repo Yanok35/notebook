@@ -146,6 +146,16 @@ class ProjectTreeView(Gtk.Box):
         self.treestore.handler_unblock(self.sigid_row_deleted)
         self.treestore.handler_unblock(self.sigid_row_inserted)
 
+        # Parse XML file to find selection list
+        docid_list = []
+        selnode = doc.find('selection')
+        subdoc_sel_list = selnode.findall('docid')
+        for docid in subdoc_sel_list:
+            docid_list.append(int(docid.text))
+
+        if len(docid_list) > 0:
+            self.set_selection_list(docid_list)
+
         if len(subdoc_list) > 0:
             self.emit('subdoc-order-changed')
 
@@ -191,6 +201,13 @@ class ProjectTreeView(Gtk.Box):
         while iter is not None and self.treestore.iter_is_valid(iter):
             self.rec_treestore_get_docs(iter, treeview_node, filesdir)
             iter = self.treestore.iter_next(iter)
+
+        sel_list = self.get_selection_list()
+        sel_node = etree.SubElement(projet, 'selection')
+        if sel_list:
+            for docid in sel_list:
+                node = etree.SubElement(sel_node, 'docid')
+                node.text = str(docid)
 
         outfile = open(filename, 'w')
         doc.write(outfile, pretty_print=True)
@@ -238,7 +255,6 @@ class ProjectTreeView(Gtk.Box):
     def set_selection(self, docid):
         iter = self.find_subdociter_from_id(docid)
         if iter:
-            print('call to select_iter')
             self.treeselection.select_iter(iter)
 
     def set_selection_list(self, docid_list):

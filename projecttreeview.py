@@ -209,6 +209,52 @@ class ProjectTreeView(Gtk.Box):
         return retlist
         #return self.current_sel_list
 
+    def rec_find_subdociter_from_id(self, iter, docid):
+        #docname = unicode(self.treestore.get_value(iter, 0), encoding='utf-8')
+        elem_docid = int(self.treestore.get_value(iter, 1))
+        if elem_docid == docid:
+            return iter
+
+        for i in range(0, self.treestore.iter_n_children(iter)):
+            child = self.treestore.iter_nth_child(iter, i)
+            child_iter = self.rec_find_subdociter_from_id(child, docid)
+            if child_iter:
+                return child_iter
+
+        return None
+
+    def find_subdociter_from_id(self, docid):
+        elem_iter = None
+
+        iter = self.treestore.get_iter_first()
+        while iter is not None and self.treestore.iter_is_valid(iter):
+            elem_iter = self.rec_find_subdociter_from_id(iter, docid)
+            if elem_iter is not None:
+                break
+            iter = self.treestore.iter_next(iter)
+
+        return elem_iter
+
+    def set_selection(self, docid):
+        iter = self.find_subdociter_from_id(docid)
+        if iter:
+            print('call to select_iter')
+            self.treeselection.select_iter(iter)
+
+    def set_selection_list(self, docid_list):
+        self.treeselection.unselect_all()
+
+        self.treeselection.handler_block(self.sigid_treeselection_changed)
+        self.treeview.expand_all() # required to have the selection to occur !
+        self.treeselection.set_mode(Gtk.SelectionMode.MULTIPLE)
+        if docid_list and len(docid_list) > 0:
+            for doc in docid_list:
+                self.set_selection(doc)
+        self.treeselection.handler_unblock(self.sigid_treeselection_changed)
+
+        #self.current_sel_list = self.treeselection
+        self.treeselection.emit('changed')
+
     def rec_treestore_get_doc_list(self, iter):
         retlist = []
 

@@ -23,7 +23,20 @@ class EditorTextView(Gtk.ScrolledWindow):
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 
         self.textview = GtkSource.View()
+        #self.textview = Gtk.TextView()
         self.textview.set_wrap_mode(Gtk.WrapMode.WORD)
+
+        fontdesc = Pango.FontDescription("Monospace 11")
+        self.textview.modify_font(fontdesc)
+        self.textview.set_show_line_numbers(True)
+        self.textview.set_highlight_current_line(True)
+
+        ## Following works on Gtk.TextView only.
+        #self.style_context = self.textview.get_style_context()
+        #self.default_bg_color = self.style_context.get_background_color(Gtk.StateFlags.NORMAL)
+        #self.textview.override_background_color(Gtk.StateFlags.NORMAL,
+        #                                        Gdk.RGBA(0, 0, 0, 1))
+
         self.textview.connect('key-press-event', self.on_key_press_event)
         self.textview.show()
 

@@ -79,6 +79,9 @@ class EditorTextView(Gtk.ScrolledWindow):
         assert(self.textbuffers[docid] is not None)
         self.textbuffers[docid].save_to_file(filename)
 
+    def subdoc_set_title(self, docid, title):
+        self.textbuffers[docid].set_title(title)
+
     def subdoc_get_content_as_text(self, docid):
         assert(self.textbuffers[docid] is not None)
         return self.textbuffers[docid].get_content_as_text()

@@ -64,6 +64,14 @@ class NotebookApp(Gtk.Application):
             wintitle = os.path.basename(self.project_filename) + ' - ' + APP_TITLE
             self.window.set_title(wintitle)
 
+    def update_subdoc_title(self, docid = None):
+        doclist = self.projecttreeview.get_doc_list()
+        for doc in doclist:
+            curid = doc[0]
+            curtitle = doc[1]
+            if (not docid) or (docid and docid == curid):
+                self.textview.subdoc_set_title(curid, curtitle)
+
     def create_toolbar(self, editortextview):
 
         toolbar = Gtk.Toolbar()
@@ -131,9 +139,6 @@ class NotebookApp(Gtk.Application):
     def on_subdoc_inserted(self, projecttreeview, docid):
         print('*** on_subdoc_inserted signal received, docid = ' + str(docid))
         self.textview.subdoc_new(docid)
-        # send selection instead...
-        #self.textview.set_visible(docid)
-        pass
 
     def on_subdoc_deleted(self, projecttreeview, docid):
         print('*** on_subdoc_deleted signal received, docid = ' + str(docid))
@@ -142,13 +147,13 @@ class NotebookApp(Gtk.Application):
 
     def on_subdoc_changed(self, projecttreeview, docid):
         print('*** on_subdoc_changed signal received, docid = ' + str(docid))
-        pass
+        self.update_subdoc_title(docid)
 
     def on_subdoc_load_from_file(self, projecttreeview, docid, filename):
         print('*** on_subdoc_load_from_file signal received, docid = ' + str(docid))
         print('filename = ' + str(filename))
         self.textview.subdoc_load_from_file(docid, filename)
-        pass
+        self.update_subdoc_title(docid)
 
     def on_subdoc_save_to_file(self, projecttreeview, docid, filename):
         print('*** on_subdoc_save_to_file signal received, docid = ' + str(docid))

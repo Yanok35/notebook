@@ -8,7 +8,9 @@ class EditorTextBuffer(GtkSource.Buffer):
     __gtype_name__ = 'EditorTextBuffer'
 
     def __init__(self):
-        Gtk.TextBuffer.__init__(self)
+        GtkSource.Buffer.__init__(self)
+
+        self.buf_internal_access = False
 
         self.tag_bold = self.create_tag("bold",
             weight=Pango.Weight.BOLD)
@@ -16,6 +18,67 @@ class EditorTextBuffer(GtkSource.Buffer):
             style=Pango.Style.ITALIC)
         self.tag_underline = self.create_tag("underline",
             underline=Pango.Underline.SINGLE)
+        self.tag_readonly = self.create_tag("readonly",
+            editable=False)
+        self.tag_blue = self.create_tag("blue",
+            foreground="blue")
+        self.tag_font_serif = self.create_tag("family",
+            family="Serif")
+        self.tag_font_big = self.create_tag("big",
+            size=20*Pango.SCALE)
+
+        self.title = unicode('')
+
+    def do_insert_text(self, pos, new_text, new_text_length):
+        #print(pos, new_text)
+        if not self.buf_internal_access:
+            # Protect user insertion before top title
+            if pos.compare(self.get_start_iter()) == 0:
+                print("dropped")
+                return False
+
+        return GtkSource.Buffer.do_insert_text(self, pos, new_text, new_text_length)
+
+    def _buf_internal_access(self, access):
+        if access:
+            self.begin_not_undoable_action()
+            self.buf_internal_access = True
+        else:
+            self.end_not_undoable_action()
+            self.buf_internal_access = False
+
+    def set_title(self, title):
+
+        self._buf_internal_access(True)
+
+        # remove previous title in buffer
+        if len(self.title):
+            start_iter = self.get_start_iter()
+            end_iter = self.get_start_iter()
+            end_iter.forward_chars(len(self.title))
+            self.remove_all_tags(start_iter, end_iter)
+            self.delete(start_iter, end_iter)
+
+        if not title.endswith('\n'):
+            title += '\n'
+
+        start_iter = self.get_start_iter()
+        self.insert(start_iter, title)
+
+        start_iter = self.get_start_iter()
+        end_iter = self.get_start_iter()
+        end_iter.forward_chars(len(title))
+        #print("len title=", len(title))
+
+        self.apply_tag(self.tag_readonly, start_iter, end_iter)
+        self.apply_tag(self.tag_underline, start_iter, end_iter)
+        #self.apply_tag(self.tag_blue, start_iter, end_iter)
+        self.apply_tag(self.tag_font_serif, start_iter, end_iter)
+        self.apply_tag(self.tag_font_big, start_iter, end_iter)
+
+        self._buf_internal_access(False)
+
+        self.title = title
 
     def get_tag_bold(self):
         return self.tag_bold
@@ -44,11 +107,11 @@ class EditorTextBuffer(GtkSource.Buffer):
     def load_from_file(self, filename):
         with open(filename, 'r') as f:
             data = f.read()
-            self.begin_not_undoable_action()
+            self._buf_internal_access(True)
             self.set_text("")
             format = self.register_deserialize_tagset()
             self.deserialize(self, format, self.get_end_iter(), data)
-            self.end_not_undoable_action()
+            self._buf_internal_access(False)
 
     def save_to_file(self, filename):
         start_iter = self.get_start_iter()

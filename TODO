@@ -7,6 +7,8 @@ dans l'éditeur pour insérer une référence croisée.
 la suppression d'une entrée dans le projecttreeview fera apparaitre une
 dialog de confirmation, si la section est référencée dans le contenu du doc
 
+découper un subdoc pour en faire deux
+fusionner deux subdocs pour en faire un
 
 Les objets paragraphes
 Les objets images

@@ -119,6 +119,11 @@ class EditorTextView(Gtk.ScrolledWindow):
 
     def subdoc_get_content_as_text(self, docid):
         assert(self.textbuffers[docid] is not None)
+        #ims = cairo.ImageSurface(cairo.FORMAT_ARGB32, 390, 60)
+        ims = cairo.PDFSurface("output.pdf", 390, 60)
+        ctx = cairo.Context(ims)
+        self.draw_on_cairo_surface(ctx, 0, 0, 390, 60)
+        #ims.write_to_png("test.png")
         return self.textbuffers[docid].get_content_as_text()
 
     def paragraph_new(self):
@@ -146,17 +151,21 @@ class EditorTextView(Gtk.ScrolledWindow):
         # Cannot be empty ?
         if self.para_nb == 0:
             self.paragraph_new()
+
+        rect = widget.get_allocation() # return cairo.RectangleInt
+        self.draw_on_cairo_surface(ctx, rect.x, rect.y, rect.width, rect.height)
+
+    def draw_on_cairo_surface(self, ctx, x, y, width, height):
         #print(ctx)
         # "ctx" is "cairo.Context" object
 
         #layout = PangoCairo.create_layout(ctx)
 
         # Following draw a gray background
-        rect = widget.get_allocation() # return CairoRectangleInt
         #print(rect.x, rect.y, rect.width, rect.height)
         ctx.save()
         ctx.set_source_rgb(0.8, 0.8, 0.8)
-        ctx.rectangle(rect.x, rect.y, rect.width, rect.height)
+        ctx.rectangle(x, y, width, height)
         ctx.fill()
         ctx.restore()
 
@@ -168,7 +177,7 @@ class EditorTextView(Gtk.ScrolledWindow):
         i = 0
         for layout, text, cursor_ptr in self.paragraphs:
             # Draw a paragraph 'containers', with margin_x, margin_y
-            para_width = rect.width - SUBDOC_WIDTH_MARGIN_PX * 2
+            para_width = width - SUBDOC_WIDTH_MARGIN_PX * 2
             #print(para_width)
 
             #desc = Pango.font_description_from_string("Times 20")

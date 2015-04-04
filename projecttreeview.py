@@ -52,6 +52,7 @@ class ProjectTreeView(Gtk.Box):
         self.treeview.expand_all()
         self.treeview.set_reorderable(True)
         self.treeview.set_activate_on_single_click(True)
+        self.treeview.set_enable_search(False)
         self.treeview.connect('drag-begin', self.on_treeview_drag_begin)
         self.treeview.connect_after('drag-drop', self.on_treeview_drag_drop)
 

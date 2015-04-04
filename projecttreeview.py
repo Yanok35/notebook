@@ -64,8 +64,9 @@ class ProjectTreeView(Gtk.Box):
         column_title = ['Document name', 'DocID']
         for i in range(0, len(column_title)):
             renderer = Gtk.CellRendererText()
-            renderer.connect("edited", self.on_treeview_cell_edited)
-            renderer.set_property("editable", True)
+            if i == 0:
+                renderer.connect("edited", self.on_treeview_cell_edited)
+                renderer.set_property("editable", True)
             column = Gtk.TreeViewColumn(column_title[i], renderer, text=i)
             self.treeview.append_column(column)
 

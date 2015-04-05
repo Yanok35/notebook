@@ -11,6 +11,9 @@ from editortextbuffer import EditorTextBuffer
 class SubdocView(Gtk.Container):
     __gtype_name__ = 'SubdocView'
 
+    PARAGRAPH = 1
+    IMAGE = 2
+
     def __init__(self):
         Gtk.Container.__init__(self)
 
@@ -187,12 +190,17 @@ class SubdocView(Gtk.Container):
             pass # print 'AttribError'
 
     # Application accessors
-    def subdoc_new(self):
-        print("subdoc_new:")
-        buf = EditorTextBuffer()
-        editor = EditorTextView()
-        editor.set_buffer(buf)
-        self.add(editor)
+    def subdoc_new(self, subdoc_type = PARAGRAPH):
+        #print("subdoc_new:")
+        if subdoc_type == SubdocView.PARAGRAPH:
+            buf = EditorTextBuffer()
+            widget = EditorTextView()
+            widget.set_buffer(buf)
+            self.add(widget)
+        elif subdoc_type == SubdocView.IMAGE:
+            print("Image insertion asked")
+        else:
+            raise AttributeError
 
     def load_from_file(self, filename):
         assert(self.childrens[0] is not None)

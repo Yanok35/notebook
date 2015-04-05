@@ -25,11 +25,13 @@ class EditorTextView(GtkSource.View):
         self.textview = self
         #self.textview = Gtk.TextView()
         self.textview.set_wrap_mode(Gtk.WrapMode.WORD)
+        self.textview.set_justification(Gtk.Justification.FILL)
 
-        fontdesc = Pango.FontDescription("Monospace 11")
+        #fontdesc = Pango.FontDescription("Monospace 11")
+        fontdesc = Pango.FontDescription("Serif 12")
         self.textview.modify_font(fontdesc)
-        self.textview.set_show_line_numbers(True)
-        self.textview.set_highlight_current_line(True)
+        #self.textview.set_show_line_numbers(True)
+        #self.textview.set_highlight_current_line(True)
 
         ## Following works on Gtk.TextView only.
         #self.style_context = self.textview.get_style_context()

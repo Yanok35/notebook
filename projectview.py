@@ -3,7 +3,7 @@
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
 import cairo
-from gi.repository import Gdk, GObject, Gtk, PangoCairo
+from gi.repository import Gdk, GObject, Gtk, Pango, PangoCairo
 
 from editortextview import EditorTextView
 from editortextbuffer import EditorTextBuffer
@@ -15,6 +15,7 @@ class ProjectView(Gtk.Container):
         Gtk.Container.__init__(self)
 
         self.childrens = {}
+        self.childrens_title = {}
         self.visible_docid_list = []
 
         #self.set_has_window(True) # implie do_realize presence
@@ -44,6 +45,8 @@ class ProjectView(Gtk.Container):
                 mini = child_mini
             if child_natural > natural:
                 natural = child_natural
+
+        # FIXME : parse title_widget to check also their lengths
         return (mini, natural)
 
     def do_get_preferred_height(self):
@@ -56,6 +59,11 @@ class ProjectView(Gtk.Container):
             #print(ch, child_mini, child_natural)
             mini += child_mini + 2 * b
             natural += child_natural + 2 * b
+
+        for docid, ch in self.childrens_title.items():
+            child_mini, child_natural = ch.get_preferred_height()
+            mini += child_mini
+            natural += child_natural
         return (mini, natural)
 
     def do_size_allocate(self, allocation):
@@ -68,22 +76,31 @@ class ProjectView(Gtk.Container):
         child_alloc.x = allocation.x + b
         child_alloc.y = allocation.y + b
         for docid in self.visible_docid_list:
+            child_label = self.childrens_title[docid]
+            child_alloc.width, _dont_care_ = child_label.get_preferred_width()
+            #if child_alloc.width < allocation.width - 2 * b:
+            #    child_alloc.width = allocation.width - 2 * b
+            child_alloc.height, _dont_care_ = child_label.get_preferred_height()
+            child_label.size_allocate(child_alloc)
+            #print("child_label %d [x,y,w,h]=" % docid,
+            #    child_alloc.x, child_alloc.y, child_alloc.width, child_alloc.height)
+            child_alloc.y += child_alloc.height + b
+
             child = self.childrens[docid]
-        #for docid, child in self.childrens.items():
-        #    if not child.get_visible():
-        #        continue
             #child_alloc.width, _dont_care_ = child.get_preferred_width()
             if child_alloc.width < allocation.width - 2 * b:
                 child_alloc.width = allocation.width - 2 * b
             child_alloc.height, _dont_care_ = child.get_preferred_height()
             child.size_allocate(child_alloc)
-            #print("child %d [x,y,w,h]=" % i,
+            #print("child %d [x,y,w,h]=" % docid,
             #    child_alloc.x, child_alloc.y, child_alloc.width, child_alloc.height)
             child_alloc.y += child_alloc.height + b
 
         # TODO: optimize changing area... (keep track of previous allocs)
         if self.get_window():
-            Gdk.Window.invalidate_rect(self.get_window(), allocation, False) #True)
+            Gdk.Window.invalidate_rect(self.get_window(), allocation, True)
+            Gdk.Window.process_updates(self.get_window(), True)
+    #    #window.invalidate_rect(allocation, True)
 
         #child_alloc = Gdk.Rectangle()
         #nb = len(self.childrens)
@@ -135,8 +152,8 @@ class ProjectView(Gtk.Container):
         # Draw a white background
         ctx.set_source_rgb(1, 1, 1) # white
         ctx.paint()
+        ctx.set_source_rgb(0, 0, 0) # black
 
-        # ctx.set_source_rgb(0, 0, 0) # black
         # ctx.select_font_face("Sans", cairo.FONT_SLANT_NORMAL,
         #     cairo.FONT_WEIGHT_NORMAL)
         # ctx.set_font_size(12)
@@ -165,7 +182,22 @@ class ProjectView(Gtk.Container):
             #print (rect.x, rect.y, rect.width, rect.height)
         ctx.restore()
 
-        ctx.set_source_rgb(0, 0, 0) # black
+        # Horizontal line to outline subdoc title
+        ctx.save()
+        for docid, child in self.childrens_title.items():
+            if not child.get_visible():
+                continue
+            parent_rect = self.get_allocation()
+            rect = child.get_allocation()
+            ctx.set_line_width(2)
+            ctx.set_source_rgb(0, 0, 0) # black
+            ctx.move_to(rect.x, rect.y + rect.height)
+            ctx.line_to(rect.x + parent_rect.width, rect.y + rect.height)
+            ctx.stroke()
+            #print (rect.x, rect.y, rect.width, rect.height)
+        ctx.restore()
+
+        #ctx.set_source_rgb(0, 0, 0) # black
         #ctx.save()
         #ctx.move_to(10, 50)
         ##super(Gtk.Container, self).do_draw(self.image, ctx)
@@ -189,10 +221,14 @@ class ProjectView(Gtk.Container):
         except AttributeError:
             print ("invalid API. use subdoc_new() to pack something")
             return
+            #docid = 0
 
-        print('do_add', docid, widget)
         widget.set_parent(self)
-        self.childrens[docid] = widget
+        if (str(type(widget)) != "<class 'editortextview.EditorTextView'>"):
+            print('do_add', docid, widget)
+            self.childrens_title[docid] = widget
+        else:
+            self.childrens[docid] = widget
         
         if widget.get_visible():
             self.queue_resize()
@@ -201,6 +237,7 @@ class ProjectView(Gtk.Container):
         for key, val in self.childrens.items():
             if val == widget:
                 del self.childrens[key]
+                del self.childrens_title[key]
 
                 if widget.get_visible():
                     self.queue_resize()
@@ -210,6 +247,9 @@ class ProjectView(Gtk.Container):
     def do_forall(self, include_int, callback):
         try:
             for docid, widget in self.childrens.items():
+                callback(widget)
+
+            for docid, widget in self.childrens_title.items():
                 callback(widget)
                 #if ch.eventbox:
                 #    callback (ch.eventbox)
@@ -227,12 +267,25 @@ class ProjectView(Gtk.Container):
         editor.__setattr__("docid", docid)
         self.add(editor)
 
+        label_widget = Gtk.Label()
+        #label_widget.set_size_request(100, 100)
+        fontdesc = Pango.FontDescription("Serif Bold 15")
+        label_widget.modify_font(fontdesc)
+        label_widget.set_justify(Gtk.Justification.LEFT)
+        #label_widget.set_visible(True)
+        label_widget.__setattr__("docid", docid)
+        self.add(label_widget)
+
     def subdoc_set_visible(self, docid_list):
         # print(">>> set_visible = " + str(docid_list))
         for docid, widget in self.childrens.items():
             if docid in docid_list:
+                self.childrens_title[docid].set_visible(True)
+                #self.childrens_title[docid].show()
                 widget.set_visible(True)
             else:
+                self.childrens_title[docid].set_visible(False)
+                #self.childrens_title[docid].hide()
                 widget.set_visible(False)
         self.visible_docid_list = docid_list
         pass
@@ -260,8 +313,11 @@ class ProjectView(Gtk.Container):
         self.childrens[docid].save_to_file(filename)
 
     def subdoc_set_title(self, docid, title):
-        assert(self.childrens[docid] is not None)
-        self.childrens[docid].set_title(title)
+        assert(self.childrens_title[docid] is not None)
+        #self.childrens_title[docid].set_text(title) # FIXME: use set markup...
+        self.childrens_title[docid].set_label(title) # FIXME: use set markup...
+        self.queue_draw()
+        #self.childrens[docid].set_title(title)
 
     def subdoc_get_content_as_text(self, docid):
         assert(self.childrens[docid] is not None)

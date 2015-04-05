@@ -20,6 +20,9 @@ class SubdocView(Gtk.Container):
         self.add_events(Gdk.EventMask.KEY_PRESS_MASK)
 
         self.childrens = {} # list of block elements
+        self.nb_blocks = 0
+        self.focused_child = None
+
         self.set_has_window(False)
         self.set_border_width(10) # for debug only
 
@@ -108,7 +111,10 @@ class SubdocView(Gtk.Container):
             if not child.get_visible():
                 continue
             rect = child.get_allocation()
-            ctx.set_line_width(4)
+            if child == self.focused_child:
+                ctx.set_line_width(4)
+            else:
+                ctx.set_line_width(1)
             ctx.set_source_rgb(0, 0, 1) # blue
             ctx.rectangle(rect.x, rect.y, rect.width, rect.height)
             ctx.stroke()
@@ -163,7 +169,11 @@ class SubdocView(Gtk.Container):
 
     def do_add(self, widget):
         widget.set_parent(self)
-        self.childrens[0] = widget
+        idx = self.nb_blocks
+        self.childrens[idx] = widget
+        widget.grab_focus()
+        self.focused_child = widget
+        self.nb_blocks += 1
 
         if widget.get_visible():
             self.queue_resize()
@@ -171,7 +181,17 @@ class SubdocView(Gtk.Container):
     def do_remove(self, widget):
         for key, val in self.childrens.items():
             if val == widget:
+
+                if widget == self.focused_child:
+                    self.focused_child = None
+
                 del self.childrens[key]
+
+                # Shift all childs indexes
+                if key < self.nb_blocks - 1:
+                    for i in range(key, self.nb_blocks - 1):
+                        self.childrens[i] = self.childrens[i+1]
+                self.nb_blocks -= 1
 
                 if widget.get_visible():
                     self.queue_resize()

@@ -149,6 +149,10 @@ class ProjectView(Gtk.Container):
     #    self.add(self.image)
 
     def do_draw(self, ctx):
+        ctx.save()
+        rect = self.get_allocation()
+        ctx.translate(-rect.x, -rect.y)
+
         # Draw a white background
         ctx.set_source_rgb(1, 1, 1) # white
         ctx.paint()
@@ -208,6 +212,7 @@ class ProjectView(Gtk.Container):
 
         #self.queue_draw()
         #ctx.show_text(self.txt_tst_buf)
+        ctx.restore()
         Gtk.Container.do_draw(self, ctx)
         return False
 

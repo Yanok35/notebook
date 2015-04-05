@@ -17,7 +17,7 @@ class ProjectView(Gtk.Container):
 
         #self.set_has_window(True) # implie do_realize presence
         self.set_has_window(False)
-        self.set_size_request(600, -1)
+        #self.set_size_request(100, -1)
         #self.set_hexpand(True)
         #self.set_vexpand(True)
 
@@ -25,7 +25,8 @@ class ProjectView(Gtk.Container):
         vp = Gtk.Viewport()
         vp.add(img)
         self.image = vp
-        self.add(self.image)
+        #self.add(self.image)
+        self.set_border_width(10) # for debug only
 
     def do_get_request_mode(self):
         return(Gtk.SizeRequestMode.HEIGHT_FOR_WIDTH)
@@ -33,47 +34,71 @@ class ProjectView(Gtk.Container):
 
     # Gtk.Widget methods override
     def do_get_preferred_width(self):
-        mini = self.get_border_width()
-        sum = 0
+        mini = 2 * self.get_border_width()
+        natural = mini
         for ch in self.childrens:
-            _x_, req = ch.get_preferred_width()
-            sum += req
-        return (mini, sum)
+            child_mini, child_natural = ch.get_preferred_width()
+            if child_mini > mini:
+                mini = child_mini
+            if child_natural > natural:
+                natural = child_natural
+        return (mini, natural)
 
     def do_get_preferred_height(self):
-        mini = self.get_border_width()
-        sum = 0
+        b = self.get_border_width()
+        mini = 2 * b
+        natural = mini
+        #print("")
         for ch in self.childrens:
-            _x_, req = ch.get_preferred_height()
-            sum += req
-        return (mini, sum)
+            child_mini, child_natural = ch.get_preferred_height()
+            #print(ch, child_mini, child_natural)
+            mini += child_mini + 2 * b
+            natural += child_natural + 2 * b
+        return (mini, natural)
 
     def do_size_allocate(self, allocation):
         self.set_allocation(allocation)
+        #print("parent [x,y,w,h]=", allocation.x,
+        #    allocation.y, allocation.width, allocation.height)
+
         b = self.get_border_width()
-
         child_alloc = Gdk.Rectangle()
-
-        nb = len(self.childrens)
-        #child_alloc.x = allocation.x + b #+ 10
-        #child_alloc.y = allocation.y + b #+ 40
-
-        i = 0
+        child_alloc.x = allocation.x + b
+        child_alloc.y = allocation.y + b
         for child in self.childrens:
-            child_alloc.x = allocation.x + b #+ 10
-            child_alloc.y = allocation.y + b + ((allocation.height - b) / nb) * i
-            b <<= 1
-            child_alloc.width  = allocation.width  - b #- 100
-            child_alloc.height = (allocation.height - b) / nb #- 40
-
-            mini, _dont_care_ = child.get_preferred_height()
-            if _dont_care_ < child_alloc.height:
-                child_alloc.height = _dont_care_
-
+            #child_alloc.width, _dont_care_ = child.get_preferred_width()
+            if child_alloc.width < allocation.width - 2 * b:
+                child_alloc.width = allocation.width - 2 * b
+            child_alloc.height, _dont_care_ = child.get_preferred_height()
             child.size_allocate(child_alloc)
-            print("child%d at :" % i, 
-                child_alloc.x, child_alloc.y, child_alloc.width, child_alloc.height)
-            i += 1
+            #print("child %d [x,y,w,h]=" % i,
+            #    child_alloc.x, child_alloc.y, child_alloc.width, child_alloc.height)
+            child_alloc.y += child_alloc.height + b
+
+        # TODO: optimize changing area... (keep track of previous allocs)
+        if self.get_window():
+            Gdk.Window.invalidate_rect(self.get_window(), allocation, False) #True)
+
+        #child_alloc = Gdk.Rectangle()
+        #nb = len(self.childrens)
+        #i = 0
+        #for child in self.childrens:
+        #    b = self.get_border_width()
+        #    child_alloc.x = allocation.x + b #+ 10
+        #    child_alloc.y = allocation.y + b + ((allocation.height - b) / nb) * i
+        #    #b <<= 1
+        #    b *= 2
+        #    child_alloc.width  = allocation.width  - b #- 100
+        #    child_alloc.height = (allocation.height - b) / nb #- 40
+
+        #    # mini, _dont_care_ = child.get_preferred_height()
+        #    # if mini > child_alloc.height:
+        #    #     child_alloc.height = mini
+
+        #    child.size_allocate(child_alloc)
+        #    #print("child %d [x,y,w,h]=" % i,
+        #    #    child_alloc.x, child_alloc.y, child_alloc.width, child_alloc.height)
+        #    i += 1
 
     #def do_realize(self):
     #    print "do_realize"
@@ -112,6 +137,7 @@ class ProjectView(Gtk.Container):
         ctx.move_to(10, 20)
         ctx.show_text("This is hello")
 
+        # Cross for layout debugging
         rect = self.get_allocation()
         ctx.set_line_width(1)
         ctx.move_to(rect.x, rect.y)
@@ -120,6 +146,18 @@ class ProjectView(Gtk.Container):
         ctx.line_to(rect.x, rect.y + rect.height)
         ctx.stroke()
 
+        # Red rectangle to outline childrends (debug also)
+        ctx.save()
+        for child in self.childrens:
+            rect = child.get_allocation()
+            ctx.set_line_width(4)
+            ctx.set_source_rgb(1, 0, 0) # red
+            ctx.rectangle(rect.x, rect.y, rect.width, rect.height)
+            ctx.stroke()
+            #print (rect.x, rect.y, rect.width, rect.height)
+        ctx.restore()
+
+        ctx.set_source_rgb(0, 0, 0) # black
         #ctx.save()
         #ctx.move_to(10, 50)
         ##super(Gtk.Container, self).do_draw(self.image, ctx)
@@ -138,7 +176,7 @@ class ProjectView(Gtk.Container):
         return Gtk.Widget # ProjectView ?
 
     def do_add(self, widget):
-        print('do_add', len(self.childrens))
+        print('do_add', len(self.childrens), widget)
         widget.set_parent(self)
         self.childrens.append(widget)
         
@@ -165,10 +203,12 @@ class ProjectView(Gtk.Container):
 
     # Application accessors
     def subdoc_new(self, docid):
+        #self.
         pass #self.textbuffers[docid] = EditorTextBuffer()
 
-    #def set_visible(self, docid):
-    #    #print(">>> set_visible = " + str(docid))
+    def subdoc_set_visible(self, docid_list):
+        #print(">>> set_visible = " + str(docid))
+        pass
     #    visid = self.textbuffer_visibleid
     #    if visid == -1 and docid is not None:
     #        assert(self.textbuffers[docid] is not None)

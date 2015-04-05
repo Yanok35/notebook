@@ -50,6 +50,61 @@ class EditorTextView(GtkSource.View):
 
         # self.add(self.image)
 
+    def do_key_press_event(self, event):
+        key = Gdk.keyval_name(event.keyval)
+        # # debug string :
+        # print(event.keyval)
+        # print(key + str(event.state), event.state)
+
+        # Catch iter of the current cursor position
+        buf = self.get_buffer()
+        mark = buf.get_mark('insert')
+        cur_iter = buf.get_iter_at_mark(mark)
+        start_iter = buf.get_start_iter()
+        end_iter = buf.get_end_iter()
+
+        # Do not treat "Return" key normally... event is
+        # up to subdocview container for block container addition
+        if key == 'Return':
+            if (event.state & Gdk.ModifierType.CONTROL_MASK) \
+                or (event.state & Gdk.ModifierType.SHIFT_MASK) \
+                or (event.state & Gdk.ModifierType.MOD1_MASK):
+                    pass
+            else:
+                print('Return key-press-event is up to subdoc view...')
+                return False
+        elif key =='BackSpace' and cur_iter.compare(start_iter) == 0:
+            print("Backspace! delete itself (if empty) and change block - 1, last_pos")
+            print("or merge with block - 1, if previous is text")
+            return False
+        elif key in ('Up', 'Down', 'Left', 'Right'):
+            #print("cur_iter (av move!) l %d : c %d" % (cur_iter.get_line(), cur_iter.get_line_index()))
+            #print("  visible: l %d : c %d" % (cur_iter.get_line(), cur_iter.get_visible_line_index()))
+
+            if key == 'Left' and cur_iter.compare(start_iter) == 0:
+                print("start of buf : should change block - 1, last_pos")
+            elif key == 'Right' and cur_iter.compare(end_iter) == 0:
+                print("end of buf : should change block + 1, first_pos")
+            elif key == 'Up':
+                next_line = cur_iter.copy()
+                possible = self.backward_display_line(next_line)
+                if not possible:
+                    print("first line : should change block - 1, pos %d" % cur_iter.get_line_offset())
+                    return True
+            elif key == 'Down':
+                next_line = cur_iter.copy()
+                possible = self.forward_display_line(next_line)
+                if not possible:
+                    print("last line : should change block + 1, pos %d" % cur_iter.get_line_offset())
+                    return True
+        else:
+            print(key)
+
+        ## #print("key_press_event in editortextview")
+        retval = GtkSource.View.do_key_press_event(self, event)
+        #print ("   %s" % str(retval))
+        return retval
+
     def on_justify_toggled(self, widget, justification):
         self.textview.set_justification(justification)
 

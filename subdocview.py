@@ -157,7 +157,20 @@ class SubdocView(Gtk.Container):
         key = Gdk.keyval_name(event.keyval)
         if key == 'Return':
             print("todo: check block items focused, catch cursor and split if needed")
+            self.subdoc_new()
             return True
+        elif key =='BackSpace':
+            if self.focused_child and self.focused_child.is_deletable():
+                for key, widget in self.childrens.items():
+                    if widget == self.focused_child:
+                        if key > 0:
+                            self.remove(widget)
+                            self.focused_child = self.childrens[key-1]
+                            self.focused_child.grab_focus()
+                            self.queue_draw()
+                        else:
+                            self.remove(widget)
+                            self.subdoc_new()
 
         retval = Gtk.Container.do_key_press_event(self, event)
         print ("   %s" % str(retval))

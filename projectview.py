@@ -5,8 +5,7 @@
 import cairo
 from gi.repository import Gdk, GObject, Gtk, Pango, PangoCairo
 
-from editortextview import EditorTextView
-from editortextbuffer import EditorTextBuffer
+from subdocview import SubdocView
 
 class ProjectView(Gtk.Container):
     __gtype_name__ = 'ProjectView'
@@ -229,7 +228,7 @@ class ProjectView(Gtk.Container):
             #docid = 0
 
         widget.set_parent(self)
-        if (str(type(widget)) != "<class 'editortextview.EditorTextView'>"):
+        if (str(type(widget)) == "<class 'gi.overrides.Gtk.Label'>"):
             print('do_add', docid, widget)
             self.childrens_title[docid] = widget
         else:
@@ -266,11 +265,10 @@ class ProjectView(Gtk.Container):
     # Application accessors
     def subdoc_new(self, docid):
         print("subdoc_new:", docid)
-        buf = EditorTextBuffer()
-        editor = EditorTextView()
-        editor.set_buffer(buf)
-        editor.__setattr__("docid", docid)
-        self.add(editor)
+        subdoc = SubdocView()
+        subdoc.subdoc_new()
+        subdoc.__setattr__("docid", docid)
+        self.add(subdoc)
 
         label_widget = Gtk.Label()
         #label_widget.set_size_request(100, 100)

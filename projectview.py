@@ -5,7 +5,8 @@
 import cairo
 from gi.repository import Gdk, GObject, Gtk, PangoCairo
 
-#from editortextbuffer import EditorTextBuffer
+from editortextview import EditorTextView
+from editortextbuffer import EditorTextBuffer
 
 class ProjectView(Gtk.Container):
     __gtype_name__ = 'ProjectView'
@@ -13,7 +14,8 @@ class ProjectView(Gtk.Container):
     def __init__(self):
         Gtk.Container.__init__(self)
 
-        self.childrens = []
+        self.childrens = {}
+        self.visible_docid_list = []
 
         #self.set_has_window(True) # implie do_realize presence
         self.set_has_window(False)
@@ -36,7 +38,7 @@ class ProjectView(Gtk.Container):
     def do_get_preferred_width(self):
         mini = 2 * self.get_border_width()
         natural = mini
-        for ch in self.childrens:
+        for docid, ch in self.childrens.items():
             child_mini, child_natural = ch.get_preferred_width()
             if child_mini > mini:
                 mini = child_mini
@@ -49,7 +51,7 @@ class ProjectView(Gtk.Container):
         mini = 2 * b
         natural = mini
         #print("")
-        for ch in self.childrens:
+        for docid, ch in self.childrens.items():
             child_mini, child_natural = ch.get_preferred_height()
             #print(ch, child_mini, child_natural)
             mini += child_mini + 2 * b
@@ -65,7 +67,11 @@ class ProjectView(Gtk.Container):
         child_alloc = Gdk.Rectangle()
         child_alloc.x = allocation.x + b
         child_alloc.y = allocation.y + b
-        for child in self.childrens:
+        for docid in self.visible_docid_list:
+            child = self.childrens[docid]
+        #for docid, child in self.childrens.items():
+        #    if not child.get_visible():
+        #        continue
             #child_alloc.width, _dont_care_ = child.get_preferred_width()
             if child_alloc.width < allocation.width - 2 * b:
                 child_alloc.width = allocation.width - 2 * b
@@ -130,25 +136,27 @@ class ProjectView(Gtk.Container):
         ctx.set_source_rgb(1, 1, 1) # white
         ctx.paint()
 
-        ctx.set_source_rgb(0, 0, 0) # black
-        ctx.select_font_face("Sans", cairo.FONT_SLANT_NORMAL,
-            cairo.FONT_WEIGHT_NORMAL)
-        ctx.set_font_size(12)
-        ctx.move_to(10, 20)
-        ctx.show_text("This is hello")
+        # ctx.set_source_rgb(0, 0, 0) # black
+        # ctx.select_font_face("Sans", cairo.FONT_SLANT_NORMAL,
+        #     cairo.FONT_WEIGHT_NORMAL)
+        # ctx.set_font_size(12)
+        # ctx.move_to(10, 20)
+        # ctx.show_text("This is hello")
 
-        # Cross for layout debugging
-        rect = self.get_allocation()
-        ctx.set_line_width(1)
-        ctx.move_to(rect.x, rect.y)
-        ctx.line_to(rect.x + rect.width, rect.y + rect.height)
-        ctx.move_to(rect.x + rect.width, rect.y)
-        ctx.line_to(rect.x, rect.y + rect.height)
-        ctx.stroke()
+        # # Cross for layout debugging
+        # rect = self.get_allocation()
+        # ctx.set_line_width(1)
+        # ctx.move_to(rect.x, rect.y)
+        # ctx.line_to(rect.x + rect.width, rect.y + rect.height)
+        # ctx.move_to(rect.x + rect.width, rect.y)
+        # ctx.line_to(rect.x, rect.y + rect.height)
+        # ctx.stroke()
 
         # Red rectangle to outline childrends (debug also)
         ctx.save()
-        for child in self.childrens:
+        for docid, child in self.childrens.items():
+            if not child.get_visible():
+                continue
             rect = child.get_allocation()
             ctx.set_line_width(4)
             ctx.set_source_rgb(1, 0, 0) # red
@@ -176,24 +184,33 @@ class ProjectView(Gtk.Container):
         return Gtk.Widget # ProjectView ?
 
     def do_add(self, widget):
-        print('do_add', len(self.childrens), widget)
+        try:
+            docid = widget.__getattribute__('docid')
+        except AttributeError:
+            print ("invalid API. use subdoc_new() to pack something")
+            return
+
+        print('do_add', docid, widget)
         widget.set_parent(self)
-        self.childrens.append(widget)
+        self.childrens[docid] = widget
         
         if widget.get_visible():
             self.queue_resize()
 
     def do_remove(self, widget):
-        if widget in self.childrens:
-            self.childrens.remove(widget)
+        for key, val in self.childrens.items():
+            if val == widget:
+                del self.childrens[key]
 
-            if widget.get_visible():
-                self.queue_resize()
+                if widget.get_visible():
+                    self.queue_resize()
+
+                return
 
     def do_forall(self, include_int, callback):
         try:
-            for ch in self.childrens:
-                callback(ch)
+            for docid, widget in self.childrens.items():
+                callback(widget)
                 #if ch.eventbox:
                 #    callback (ch.eventbox)
                 #else:
@@ -203,11 +220,21 @@ class ProjectView(Gtk.Container):
 
     # Application accessors
     def subdoc_new(self, docid):
-        #self.
-        pass #self.textbuffers[docid] = EditorTextBuffer()
+        print("subdoc_new:", docid)
+        buf = EditorTextBuffer()
+        editor = EditorTextView()
+        editor.set_buffer(buf)
+        editor.__setattr__("docid", docid)
+        self.add(editor)
 
     def subdoc_set_visible(self, docid_list):
-        #print(">>> set_visible = " + str(docid))
+        # print(">>> set_visible = " + str(docid_list))
+        for docid, widget in self.childrens.items():
+            if docid in docid_list:
+                widget.set_visible(True)
+            else:
+                widget.set_visible(False)
+        self.visible_docid_list = docid_list
         pass
     #    visid = self.textbuffer_visibleid
     #    if visid == -1 and docid is not None:
@@ -225,19 +252,19 @@ class ProjectView(Gtk.Container):
     #        self.textbuffer_visibleid = docid
 
     def subdoc_load_from_file(self, docid, filename):
-        assert(self.textbuffers[docid] is not None)
-        #self.textbuffers[docid].load_from_file(filename)
+        assert(self.childrens[docid] is not None)
+        self.childrens[docid].load_from_file(filename)
 
     def subdoc_save_to_file(self, docid, filename):
-        assert(self.textbuffers[docid] is not None)
-        #self.textbuffers[docid].save_to_file(filename)
+        assert(self.childrens[docid] is not None)
+        self.childrens[docid].save_to_file(filename)
 
     def subdoc_set_title(self, docid, title):
-        #self.textbuffers[docid].set_title(title)
-        pass
+        assert(self.childrens[docid] is not None)
+        self.childrens[docid].set_title(title)
 
     def subdoc_get_content_as_text(self, docid):
-        assert(self.textbuffers[docid] is not None)
-        #return self.textbuffers[docid].get_content_as_text()
+        assert(self.childrens[docid] is not None)
+        return self.childrens[docid].get_content_as_text()
 
 GObject.type_register(ProjectView)

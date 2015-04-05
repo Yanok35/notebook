@@ -5,8 +5,8 @@
 import sys, os
 
 from gi.repository import Gdk, Gio, Gtk, Pango
-from projecttreeview import ProjectTreeView
-from editortextview import EditorTextView
+
+import glade_custom_catalog
 
 APP_TITLE = "Notebook"
 

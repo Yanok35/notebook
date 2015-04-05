@@ -324,6 +324,10 @@ class ProjectView(Gtk.Container):
 
     def subdoc_get_content_as_text(self, docid):
         assert(self.childrens[docid] is not None)
-        return self.childrens[docid].get_content_as_text()
+        assert(self.childrens_title[docid] is not None)
+        text = self.childrens_title[docid].get_text() + "\n"
+        text += ((len(text)-1) * "-") + "\n\n"
+        text += self.childrens[docid].get_content_as_text()
+        return text
 
 GObject.type_register(ProjectView)

@@ -92,7 +92,7 @@ class EditorTextView(GtkSource.View):
     def get_content_as_text(self):
         buf = self.get_buffer()
         assert(buf is not None)
-        buf.get_content_as_text()
+        return buf.get_content_as_text()
 
     def on_key_press_event(self, window, event):
         key = Gdk.keyval_name(event.keyval)

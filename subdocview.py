@@ -39,14 +39,14 @@ class SubdocView(Gtk.Container):
 
     def do_get_preferred_height(self):
         b = self.get_border_width()
-        mini = 2 * b
+        mini = b
         natural = mini
         #print("")
         for docid, ch in self.childrens.items():
             child_mini, child_natural = ch.get_preferred_height()
             #print(ch, child_mini, child_natural)
-            mini += child_mini + 2 * b
-            natural += child_natural + 2 * b
+            mini += child_mini + b
+            natural += child_natural + b
 
         return (mini, natural)
 

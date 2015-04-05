@@ -31,11 +31,11 @@ class EditorTextBuffer(GtkSource.Buffer):
 
     def do_insert_text(self, pos, new_text, new_text_length):
         #print(pos, new_text)
-        if not self.buf_internal_access:
-            # Protect user insertion before top title
-            if pos.compare(self.get_start_iter()) == 0:
-                print("dropped")
-                return False
+        # if not self.buf_internal_access:
+        #     # Protect user insertion before top title
+        #     if pos.compare(self.get_start_iter()) == 0:
+        #         print("dropped")
+        #         return False
 
         return GtkSource.Buffer.do_insert_text(self, pos, new_text, new_text_length)
 

@@ -209,6 +209,12 @@ class SubdocView(Gtk.Container):
         except AttributeError:
             pass # print 'AttribError'
 
+    # Signals (mostly from childs)
+    def on_child_focus_in(self, widget, event):
+        #print(event)
+        self.focused_child = widget
+        self.queue_draw()
+
     # Application accessors
     def subdoc_new(self, subdoc_type = PARAGRAPH):
         #print("subdoc_new:")
@@ -221,6 +227,8 @@ class SubdocView(Gtk.Container):
             print("Image insertion asked")
         else:
             raise AttributeError
+
+        widget.connect("focus-in-event", self.on_child_focus_in)
 
     def load_from_file(self, filename):
         assert(self.childrens[0] is not None)

@@ -31,7 +31,9 @@ class NotebookApp(Gtk.Application):
         self.projecttreeview.connect('subdoc-selection-changed', self.on_subdoc_selection_changed)
         self.projecttreeview.connect('project-export', self.on_project_export)
 
-        self.textview = self.builder.get_object("editortextview1")
+        self.projview = self.builder.get_object("projectview1")
+        #self.projview.add(GtkSource.View())
+        #self.projview.add(Gtk.TextView())
 
         self.hpaned = self.builder.get_object("paned1")
         self.hpaned.set_position(200)
@@ -70,7 +72,7 @@ class NotebookApp(Gtk.Application):
             curid = doc[0]
             curtitle = doc[1]
             if (not docid) or (docid and docid == curid):
-                self.textview.subdoc_set_title(curid, curtitle)
+                self.projview.subdoc_set_title(curid, curtitle)
 
     def create_toolbar(self, editortextview):
 
@@ -138,11 +140,11 @@ class NotebookApp(Gtk.Application):
 
     def on_subdoc_inserted(self, projecttreeview, docid):
         print('*** on_subdoc_inserted signal received, docid = ' + str(docid))
-        self.textview.subdoc_new(docid)
+        self.projview.subdoc_new(docid)
 
     def on_subdoc_deleted(self, projecttreeview, docid):
-        print('*** on_subdoc_deleted signal received, docid = ' + str(docid))
-        #self.textview.set_visible(None)
+        print('*** TODO: on_subdoc_deleted signal received, docid = ' + str(docid))
+        #self.projview.subdoc_set_visible(None)
         pass
 
     def on_subdoc_changed(self, projecttreeview, docid):
@@ -152,13 +154,13 @@ class NotebookApp(Gtk.Application):
     def on_subdoc_load_from_file(self, projecttreeview, docid, filename):
         print('*** on_subdoc_load_from_file signal received, docid = ' + str(docid))
         print('filename = ' + str(filename))
-        self.textview.subdoc_load_from_file(docid, filename)
+        self.projview.subdoc_load_from_file(docid, filename)
         self.update_subdoc_title(docid)
 
     def on_subdoc_save_to_file(self, projecttreeview, docid, filename):
         print('*** on_subdoc_save_to_file signal received, docid = ' + str(docid))
         print('filename = ' + str(filename))
-        self.textview.subdoc_save_to_file(docid, filename)
+        self.projview.subdoc_save_to_file(docid, filename)
 
     def on_subdoc_order_changed(self, projecttreeview):
         print('*** on_subdoc_order_changed signal received')
@@ -168,16 +170,13 @@ class NotebookApp(Gtk.Application):
         print('*** on_subdoc_selection_changed signal received')
         sel_list = projecttreeview.get_selection_list()
         print(len(sel_list), sel_list)
-        if len(sel_list) == 0:
-            self.textview.set_visible(None)
-        else:
-            self.textview.set_visible(sel_list[0])
+        self.projview.subdoc_set_visible(sel_list)
 
     def on_project_export(self, projecttreeview):
         text = ""
         docids = projecttreeview.get_docid_list()
         for docid in docids:
-            text += self.textview.subdoc_get_content_as_text(docid)
+            text += self.projview.subdoc_get_content_as_text(docid)
         print text
         pass
 

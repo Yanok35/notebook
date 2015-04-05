@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Generated with glade 3.16.1 -->
 <interface>
-  <requires lib="gtk+" version="3.10"/>
   <!-- interface-requires glade_custom_catalog 0.0 -->
+  <requires lib="gtk+" version="3.10"/>
   <object class="GtkAccelGroup" id="accelgroup1"/>
   <object class="GtkWindow" id="window1">
     <property name="can_focus">False</property>
@@ -261,10 +261,25 @@
               </packing>
             </child>
             <child>
-              <object class="EditorTextView" id="editortextview1">
+              <object class="GtkScrolledWindow" id="scrolledwindow1">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkViewport" id="viewport1">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="ProjectView" id="projectview1">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <child>
+                          <placeholder/>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
               </object>
               <packing>
                 <property name="resize">True</property>

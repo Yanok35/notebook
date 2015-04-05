@@ -6,23 +6,23 @@ from gi.repository import Gdk, Gtk, GtkSource, Pango
 
 from editortextbuffer import EditorTextBuffer
 
-class EditorTextView(Gtk.ScrolledWindow):
+class EditorTextView(GtkSource.View):
     __gtype_name__ = 'EditorTextView'
 
     def __init__(self):
-        Gtk.ScrolledWindow.__init__(self)
+        GtkSource.View.__init__(self)
 
         self.set_size_request(600, -1)
 
-        self.set_hexpand(True)
-        self.set_vexpand(True)
+        #self.set_hexpand(True)
+        #self.set_vexpand(True)
 
         self.textbuffers = {} #EditorTextBuffer()
         self.textbuffer_visibleid = -1 # -1 means an image is displayed
 
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 
-        self.textview = GtkSource.View()
+        self.textview = self
         #self.textview = Gtk.TextView()
         self.textview.set_wrap_mode(Gtk.WrapMode.WORD)
 
@@ -40,51 +40,57 @@ class EditorTextView(Gtk.ScrolledWindow):
         self.textview.connect('key-press-event', self.on_key_press_event)
         self.textview.show()
 
-        img = Gtk.Image.new_from_file("oshw-logo-800-px.png")
-        vp = Gtk.Viewport()
-        vp.add(img)
-        self.image = vp
-        self.image.show()
+        # img = Gtk.Image.new_from_file("oshw-logo-800-px.png")
+        # vp = Gtk.Viewport()
+        # vp.add(img)
+        # self.image = vp
+        # self.image.show()
 
-        self.add(self.image)
+        # self.add(self.image)
 
     def on_justify_toggled(self, widget, justification):
         self.textview.set_justification(justification)
 
-    def subdoc_new(self, docid):
-        self.textbuffers[docid] = EditorTextBuffer()
+    #def subdoc_new(self, docid):
+    #    self.textbuffers[docid] = EditorTextBuffer()
 
-    def set_visible(self, docid):
+    def subdoc_set_visible(self, docid):
         #print(">>> set_visible = " + str(docid))
-        visid = self.textbuffer_visibleid
-        if visid == -1 and docid is not None:
-            assert(self.textbuffers[docid] is not None)
-            self.remove(self.image)
-            self.add(self.textview)
-            self.textbuffer_visibleid = docid
-        elif visid != -1 and docid is None:
-            self.remove(self.textview)
-            self.add(self.image)
-            self.textbuffer_visibleid = -1
+        # visid = self.textbuffer_visibleid
+        # if visid == -1 and docid is not None:
+        #     assert(self.textbuffers[docid] is not None)
+        #     self.remove(self.image)
+        #     self.add(self.textview)
+        #     self.textbuffer_visibleid = docid
+        # elif visid != -1 and docid is None:
+        #     self.remove(self.textview)
+        #     self.add(self.image)
+        #     self.textbuffer_visibleid = -1
 
         if docid:
-            self.textview.set_buffer(self.textbuffers[docid])
-            self.textbuffer_visibleid = docid
+            assert(self.textbuffers[docid] is not None)
+            #self.textview.set_buffer(self.textbuffers[docid])
+            # self.textbuffer_visibleid = docid
 
-    def subdoc_load_from_file(self, docid, filename):
-        assert(self.textbuffers[docid] is not None)
-        self.textbuffers[docid].load_from_file(filename)
+    def load_from_file(self, filename):
+        buf = self.get_buffer()
+        assert(buf is not None)
+        buf.load_from_file(filename)
 
-    def subdoc_save_to_file(self, docid, filename):
-        assert(self.textbuffers[docid] is not None)
-        self.textbuffers[docid].save_to_file(filename)
+    def save_to_file(self, filename):
+        buf = self.get_buffer()
+        assert(buf is not None)
+        buf.save_to_file(filename)
 
-    def subdoc_set_title(self, docid, title):
-        self.textbuffers[docid].set_title(title)
+    def set_title(self, title):
+        buf = self.get_buffer()
+        assert(buf is not None)
+        buf.set_title(title)
 
-    def subdoc_get_content_as_text(self, docid):
-        assert(self.textbuffers[docid] is not None)
-        return self.textbuffers[docid].get_content_as_text()
+    def get_content_as_text(self):
+        buf = self.get_buffer()
+        assert(buf is not None)
+        buf.get_content_as_text()
 
     def on_key_press_event(self, window, event):
         key = Gdk.keyval_name(event.keyval)

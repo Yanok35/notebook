@@ -2,11 +2,13 @@
  <init-function>glade_python_init</init-function>
 
  <glade-widget-classes>
+   <glade-widget-class title="ProjectView" name="ProjectView" generic-name="projectview" deprecated="false"/>
    <glade-widget-class title="ProjectTreeView" name="ProjectTreeView" generic-name="projecttreeview" deprecated="false"/>
    <glade-widget-class title="EditorTextView" name="EditorTextView" generic-name="editortextview"/>
  </glade-widget-classes>
 
  <glade-widget-group name="python" title="Python">
+   <glade-widget-class-ref name="ProjectView"/>
    <glade-widget-class-ref name="ProjectTreeView"/>
    <glade-widget-class-ref name="EditorTextView"/>
  </glade-widget-group>

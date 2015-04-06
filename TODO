@@ -13,6 +13,10 @@ fusionner deux subdocs pour en faire un
 Les objets paragraphes
 Les objets images
 
+Un subdoc = une liste de paragraphes et d'objects "block"
+Un paragraphe = une liste d'objet "inline" -> géré par gtktextview.
+images inline = images block "ancrée" sur le texte ? tbc.
+
 opérations sur les images :
   1) redimensionner (avec/sans la conservation de l'aspert),
   2) cropper
@@ -41,6 +45,7 @@ formule mathématiques ?
 TODO list / bugfixes:
 ---------------------
 
-- sauvegarder la sélection dans le projet
-- sélectionner un subdoc déplacé, une fois arrivé à sa destination
+[x] sauvegarder la sélection dans le projet
+[x] sélectionner un subdoc déplacé, une fois arrivé à sa destination
+[ ] projectview classe dérivée de treemodel en lieu et place des appels subdoc_*
 

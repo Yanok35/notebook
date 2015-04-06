@@ -4,6 +4,7 @@
 
 import cairo
 from gi.repository import Gdk, GObject, Gtk, Pango, PangoCairo
+from lxml import etree
 
 from editortextview import EditorTextView
 from editortextbuffer import EditorTextBuffer
@@ -244,12 +245,35 @@ class SubdocView(Gtk.Container):
         widget.connect("focus-in-event", self.on_child_focus_in)
 
     def load_from_file(self, filename):
-        assert(self.childrens[0] is not None)
-        self.childrens[0].load_from_file(filename)
+
+        # Remove previous widgets (should be done elsewhere !)
+        while self.nb_blocks != 0:
+            self.remove(self.childrens[self.nb_blocks-1])
+
+        with open(filename, 'r') as f:
+            data = f.read()
+            data = data.decode('utf-8')
+
+            # Parse XML file to add node recursively
+            subdoc = etree.fromstring(data)
+            assert(subdoc.tag == 'subdoc')
+
+            para_list = subdoc.findall('p')
+            for para in para_list:
+                self.subdoc_new(subdoc_type = SubdocView.PARAGRAPH)
+                sub = self.childrens[self.nb_blocks-1]
+                assert (sub is not None)
+                sub.set_content_from_html(para.text)
 
     def save_to_file(self, filename):
-        assert(self.childrens[0] is not None)
-        self.childrens[0].save_to_file(filename)
+        subdoc = etree.Element('subdoc')
+        tree = etree.ElementTree(subdoc)
+        for docid, child in self.childrens.items():
+            tag_name = child.get_serialize_tag_name()
+            childnode = etree.SubElement(subdoc, tag_name)
+            childnode.text = child.get_content_as_html()
+        with open(filename, 'w') as f:
+            tree.write(f, pretty_print=True)
 
     def get_content_as_text(self):
         assert(self.childrens[0] is not None)

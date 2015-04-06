@@ -108,46 +108,29 @@ class EditorTextView(GtkSource.View):
     def on_justify_toggled(self, widget, justification):
         self.textview.set_justification(justification)
 
-    #def subdoc_new(self, docid):
-    #    self.textbuffers[docid] = EditorTextBuffer()
-
-    def subdoc_set_visible(self, docid):
-        #print(">>> set_visible = " + str(docid))
-        # visid = self.textbuffer_visibleid
-        # if visid == -1 and docid is not None:
-        #     assert(self.textbuffers[docid] is not None)
-        #     self.remove(self.image)
-        #     self.add(self.textview)
-        #     self.textbuffer_visibleid = docid
-        # elif visid != -1 and docid is None:
-        #     self.remove(self.textview)
-        #     self.add(self.image)
-        #     self.textbuffer_visibleid = -1
-
-        if docid:
-            assert(self.textbuffers[docid] is not None)
-            #self.textview.set_buffer(self.textbuffers[docid])
-            # self.textbuffer_visibleid = docid
-
-    def load_from_file(self, filename):
-        buf = self.get_buffer()
-        assert(buf is not None)
-        buf.load_from_file(filename)
-
-    def save_to_file(self, filename):
-        buf = self.get_buffer()
-        assert(buf is not None)
-        buf.save_to_file(filename)
-
-    def set_title(self, title):
-        buf = self.get_buffer()
-        assert(buf is not None)
-        buf.set_title(title)
-
     def get_content_as_text(self):
         buf = self.get_buffer()
         assert(buf is not None)
         return buf.get_content_as_text()
+
+    def set_content_from_html(self, text):
+        buf = self.get_buffer()
+        assert(buf is not None)
+        return buf.set_content_from_html(text)
+
+    def get_content_as_html(self):
+        buf = self.get_buffer()
+        assert(buf is not None)
+        return buf.get_content_as_html()
+
+    def get_serialize_tag_name(self):
+        return 'p'
+
+    def is_deletable(self):
+        buf = self.get_buffer()
+        start = buf.get_start_iter()
+        end = buf.get_end_iter()
+        return start.compare(end) == 0
 
     def on_key_press_event(self, window, event):
         key = Gdk.keyval_name(event.keyval)

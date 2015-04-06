@@ -73,10 +73,12 @@ class EditorTextView(GtkSource.View):
             else:
                 print('Return key-press-event is up to subdoc view...')
                 return False
-        elif key =='BackSpace' and cur_iter.compare(start_iter) == 0:
-            print("Backspace! delete itself (if empty) and change block - 1, last_pos")
-            print("or merge with block - 1, if previous is text")
-            return False
+        elif key =='BackSpace' \
+            and not buf.get_property('has-selection') \
+            and cur_iter.compare(start_iter) == 0:
+                print("Backspace! delete itself (if empty) and change block - 1, last_pos")
+                print("or merge with block - 1, if previous is text")
+                return False
         elif key in ('Up', 'Down', 'Left', 'Right'):
             #print("cur_iter (av move!) l %d : c %d" % (cur_iter.get_line(), cur_iter.get_line_index()))
             #print("  visible: l %d : c %d" % (cur_iter.get_line(), cur_iter.get_visible_line_index()))
@@ -98,7 +100,7 @@ class EditorTextView(GtkSource.View):
                     print("last line : should change block + 1, pos %d" % cur_iter.get_line_offset())
                     return True
         else:
-            print(key)
+            pass #print(key)
 
         ## #print("key_press_event in editortextview")
         retval = GtkSource.View.do_key_press_event(self, event)

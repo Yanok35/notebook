@@ -14,7 +14,7 @@ class EditorTextView(GtkSource.View):
 
         self.set_size_request(600, -1)
 
-        #self.set_hexpand(True)
+        self.set_hexpand(True)
         #self.set_vexpand(True)
 
         self.textbuffers = {} #EditorTextBuffer()

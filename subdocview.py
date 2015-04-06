@@ -67,9 +67,10 @@ class SubdocView(Gtk.Container):
         child_alloc.x = allocation.x + b
         child_alloc.y = allocation.y + b
         for key, child in self.childrens.items():
-            #child_alloc.width, _dont_care_ = child.get_preferred_width()
-            if child_alloc.width < allocation.width - 2 * b:
-                child_alloc.width = allocation.width - 2 * b
+            child_alloc.width, _dont_care_ = child.get_preferred_width()
+            if child.get_property("hexpand") == True:
+                if child_alloc.width < allocation.width - 2 * b:
+                    child_alloc.width = allocation.width - 2 * b
             child_alloc.height, _dont_care_ = child.get_preferred_height()
             child.size_allocate(child_alloc)
             #print("child %d [x,y,w,h]=" % docid,

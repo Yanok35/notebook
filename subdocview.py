@@ -15,7 +15,32 @@ class SubdocView(Gtk.Container):
     PARAGRAPH = 1
     IMAGE = 2
 
-    def __init__(self):
+
+    # 'Static' class members
+    subdoc_insert_btn = None
+    subdoc_remove_btn = None
+
+    # toolbar handling using class methods
+    @classmethod
+    def toolbar_create(cls, toolbar, self):
+        if cls.subdoc_insert_btn is None:
+            cls.subdoc_insert_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_NEW)
+            cls.subdoc_insert_btn.show()
+            toolbar.insert(cls.subdoc_insert_btn, -1)
+
+        if cls.subdoc_remove_btn is None:
+            cls.subdoc_remove_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_REMOVE)
+            cls.subdoc_remove_btn.show()
+            toolbar.insert(cls.subdoc_remove_btn, -1)
+
+            sep = Gtk.SeparatorToolItem()
+            sep.show()
+            toolbar.insert(sep, -1)
+
+        cls.subdoc_insert_btn.connect('clicked', self.on_subdoc_insert_clicked)
+        cls.subdoc_remove_btn.connect('clicked', self.on_subdoc_remove_clicked)
+
+    def __init__(self, elements_toolbar):
         Gtk.Container.__init__(self)
 
         self.add_events(Gdk.EventMask.KEY_PRESS_MASK)
@@ -26,6 +51,9 @@ class SubdocView(Gtk.Container):
 
         self.set_has_window(False)
         self.set_border_width(10) # for debug only
+
+        self.elements_toolbar = elements_toolbar
+        SubdocView.toolbar_create(elements_toolbar, self)
 
     def do_get_request_mode(self):
         return(Gtk.SizeRequestMode.HEIGHT_FOR_WIDTH)
@@ -230,12 +258,22 @@ class SubdocView(Gtk.Container):
         self.focused_child = widget
         self.queue_draw()
 
+    def on_subdoc_insert_clicked(self, btn):
+        if self.is_focus():
+            print('on_subdoc_insert_clicked')
+            print(self)
+
+    def on_subdoc_remove_clicked(self, btn):
+        if self.is_focus():
+            print('on_subdoc_remove_clicked')
+            print(self)
+
     # Application accessors
     def subdoc_new(self, subdoc_type = PARAGRAPH):
         #print("subdoc_new:")
         if subdoc_type == SubdocView.PARAGRAPH:
             buf = EditorTextBuffer()
-            widget = EditorTextView()
+            widget = EditorTextView(self.elements_toolbar)
             widget.set_buffer(buf)
             self.add(widget)
         elif subdoc_type == SubdocView.IMAGE:

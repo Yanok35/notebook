@@ -34,6 +34,7 @@ class NotebookApp(Gtk.Application):
         self.projview = self.builder.get_object("projectview1")
         #self.projview.add(GtkSource.View())
         #self.projview.add(Gtk.TextView())
+        self.projview.set_element_toolbar(self.builder.get_object('block_toolbar'))
 
         self.hpaned = self.builder.get_object("paned1")
         self.hpaned.set_position(200)

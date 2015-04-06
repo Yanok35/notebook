@@ -16,6 +16,7 @@ class ProjectView(Gtk.Container):
         self.childrens = {}
         self.childrens_title = {}
         self.visible_docid_list = []
+        self.elements_toolbar = None
 
         #self.set_has_window(True) # implie do_realize presence
         self.set_has_window(False)
@@ -263,9 +264,14 @@ class ProjectView(Gtk.Container):
             pass # print 'AttribError'
 
     # Application accessors
+    def set_element_toolbar(self, toolbar):
+        '''accessor for app'''
+        assert(self.elements_toolbar is None)
+        self.elements_toolbar = toolbar
+
     def subdoc_new(self, docid):
-        print("subdoc_new:", docid)
-        subdoc = SubdocView()
+        #print("subdoc_new:", docid)
+        subdoc = SubdocView(self.elements_toolbar)
         subdoc.subdoc_new()
         subdoc.__setattr__("docid", docid)
         self.add(subdoc)

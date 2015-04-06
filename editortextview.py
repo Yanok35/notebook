@@ -9,7 +9,39 @@ from editortextbuffer import EditorTextBuffer
 class EditorTextView(GtkSource.View):
     __gtype_name__ = 'EditorTextView'
 
-    def __init__(self):
+    # 'Static' class members
+    bold_btn = None
+    ital_btn = None
+    unde_btn = None
+
+    # toolbar handling using class methods
+    @classmethod
+    def toolbar_create(cls, toolbar, self):
+        if cls.bold_btn is None:
+            cls.bold_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_BOLD)
+            toolbar.insert(cls.bold_btn, -1)
+
+        if cls.ital_btn is None:
+            cls.ital_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_ITALIC)
+            toolbar.insert(cls.ital_btn, -1)
+
+        if cls.unde_btn is None:
+            cls.unde_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_UNDERLINE)
+            toolbar.insert(cls.unde_btn, -1)
+
+        cls.bold_btn.connect('clicked', self.on_bold_button_clicked)
+        cls.ital_btn.connect('clicked', self.on_italic_button_clicked)
+        cls.unde_btn.connect('clicked', self.on_underline_button_clicked)
+
+    @classmethod
+    def toobar_set_visible(cls, visible):
+        for w in [ cls.bold_btn, cls.ital_btn, cls.unde_btn ]:
+            if visible:
+                w.show()
+            else:
+                w.hide()
+
+    def __init__(self, elements_toolbar):
         GtkSource.View.__init__(self)
 
         self.set_size_request(600, -1)
@@ -49,6 +81,16 @@ class EditorTextView(GtkSource.View):
         # self.image.show()
 
         # self.add(self.image)
+
+        EditorTextView.toolbar_create(elements_toolbar, self)
+
+    def do_focus_in_event(self, event):
+        EditorTextView.toobar_set_visible(True)
+        return GtkSource.View.do_focus_in_event(self, event)
+
+    def do_focus_out_event(self, event):
+        EditorTextView.toobar_set_visible(False)
+        return GtkSource.View.do_focus_out_event(self, event)
 
     def do_key_press_event(self, event):
         key = Gdk.keyval_name(event.keyval)
@@ -106,6 +148,21 @@ class EditorTextView(GtkSource.View):
         retval = GtkSource.View.do_key_press_event(self, event)
         #print ("   %s" % str(retval))
         return retval
+
+    def on_bold_button_clicked(self, btn):
+        if self.is_focus():
+            print('on_bold_button_clicked')
+            print(self)
+
+    def on_italic_button_clicked(self, btn):
+        if self.is_focus():
+            print('on_italic_button_clicked')
+            print(self)
+
+    def on_underline_button_clicked(self, btn):
+        if self.is_focus():
+            print('on_underline_button_clicked')
+            print(self)
 
     def on_justify_toggled(self, widget, justification):
         self.textview.set_justification(justification)

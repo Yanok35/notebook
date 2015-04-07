@@ -4,7 +4,9 @@
 
 from gi.repository import Gdk, GdkPixbuf, GObject, Gtk, GtkSource, Pango
 
-class ImageView(Gtk.Layout):
+from ielementblock import ElementBlockInterface
+
+class ImageView(Gtk.Layout, ElementBlockInterface):
     __gtype_name__ = 'ImageView'
 
     def __init__(self, **args):
@@ -578,6 +580,7 @@ class ImageView(Gtk.Layout):
 #        except AttributeError:
 #            pass # print 'AttribError'
 
+    # ElementBlockInterface implementation
     def get_content_as_text(self):
     #    buf = self.get_buffer()
     #    assert(buf is not None)

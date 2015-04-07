@@ -4,9 +4,10 @@
 
 from gi.repository import Gdk, Gtk, GtkSource, Pango
 
+from ielementblock import ElementBlockInterface
 from editortextbuffer import EditorTextBuffer
 
-class EditorTextView(GtkSource.View):
+class EditorTextView(GtkSource.View, ElementBlockInterface):
     __gtype_name__ = 'EditorTextView'
 
     # 'Static' class members
@@ -166,6 +167,7 @@ class EditorTextView(GtkSource.View):
     def on_justify_toggled(self, widget, justification):
         self.textview.set_justification(justification)
 
+    # ElementBlockInterface implementation
     def get_content_as_text(self):
         buf = self.get_buffer()
         assert(buf is not None)

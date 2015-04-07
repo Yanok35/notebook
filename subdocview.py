@@ -6,6 +6,7 @@ import cairo
 from gi.repository import Gdk, GObject, Gtk, Pango, PangoCairo
 from lxml import etree
 
+from ielementblock import ElementBlockInterface
 from editortextview import EditorTextView
 from editortextbuffer import EditorTextBuffer
 
@@ -208,7 +209,7 @@ class SubdocView(Gtk.Container):
 
     # Gtk.Container methods override
     def do_child_type(self):
-        return Gtk.Widget # ProjectView ?
+        return ElementBlockInterface
 
     def do_add(self, widget):
         widget.set_parent(self)

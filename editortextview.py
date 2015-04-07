@@ -71,7 +71,6 @@ class EditorTextView(GtkSource.View):
         #self.textview.override_background_color(Gtk.StateFlags.NORMAL,
         #                                        Gdk.RGBA(0, 0, 0, 1))
 
-        self.textview.connect('key-press-event', self.on_key_press_event)
         self.textview.show()
 
         # img = Gtk.Image.new_from_file("oshw-logo-800-px.png")
@@ -191,23 +190,8 @@ class EditorTextView(GtkSource.View):
         end = buf.get_end_iter()
         return start.compare(end) == 0
 
-    def on_key_press_event(self, window, event):
-        key = Gdk.keyval_name(event.keyval)
 
-        # debug string :
-        #print(key + str(event.state))
 
-        if event.state & Gdk.ModifierType.CONTROL_MASK and key in ('o', 's', 'v'):
-            if key == 'v':
-                pixbuf = self.clipboard.wait_for_image()
-                visid = self.textbuffer_visibleid
-                if pixbuf != None and visid != -1:
-                    self.textbuffers[visid].insert_pixbuf_at_cursor(pixbuf)
-                else:
-                    return False
 
-                #print ('event catched')
-                return True
 
-        return False
 

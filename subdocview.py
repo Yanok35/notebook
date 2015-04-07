@@ -16,7 +16,6 @@ class SubdocView(Gtk.Container):
     PARAGRAPH = 1
     IMAGE = 2
 
-
     # 'Static' class members
     subdoc_insert_btn = None
     subdoc_remove_btn = None
@@ -106,11 +105,6 @@ class SubdocView(Gtk.Container):
             #    child_alloc.x, child_alloc.y, child_alloc.width, child_alloc.height)
             child_alloc.y += child_alloc.height + b
 
-        # TODO: optimize changing area... (keep track of previous allocs)
-        if self.get_window():
-            Gdk.Window.invalidate_rect(self.get_window(), allocation, True)
-            Gdk.Window.process_updates(self.get_window(), True)
-
     def do_draw(self, ctx):
         ctx.save()
         rect = self.get_allocation()
@@ -122,12 +116,6 @@ class SubdocView(Gtk.Container):
         ctx.paint()
         ctx.set_source_rgb(0, 0, 0) # black
 
-        # ctx.select_font_face("Sans", cairo.FONT_SLANT_NORMAL,
-        #     cairo.FONT_WEIGHT_NORMAL)
-        # ctx.set_font_size(12)
-        # ctx.move_to(10, 20)
-        # ctx.show_text("This is hello")
-
         # # Cross for layout debugging
         # ctx.set_line_width(1)
         # ctx.move_to(rect.x, rect.y)
@@ -136,7 +124,7 @@ class SubdocView(Gtk.Container):
         # ctx.line_to(rect.x, rect.y + rect.height)
         # ctx.stroke()
 
-        # Blue rectangle to outline childrends (debug also)
+        # Blue rectangle to outline childrens (debug also)
         #ctx.save()
         for docid, child in self.childrens.items():
             if not child.get_visible():
@@ -152,32 +140,6 @@ class SubdocView(Gtk.Container):
             #print (rect.x, rect.y, rect.width, rect.height)
         #ctx.restore()
 
-        ## Horizontal line to outline subdoc title
-        #ctx.save()
-        #for docid, child in self.childrens_title.items():
-        #    if not child.get_visible():
-        #        continue
-        #    parent_rect = self.get_allocation()
-        #    rect = child.get_allocation()
-        #    ctx.set_line_width(2)
-        #    ctx.set_source_rgb(0, 0, 0) # black
-        #    ctx.move_to(rect.x, rect.y + rect.height)
-        #    ctx.line_to(rect.x + parent_rect.width, rect.y + rect.height)
-        #    ctx.stroke()
-        #    #print (rect.x, rect.y, rect.width, rect.height)
-        #ctx.restore()
-
-        #ctx.set_source_rgb(0, 0, 0) # black
-        #ctx.save()
-        #ctx.move_to(10, 50)
-        ##super(Gtk.Container, self).do_draw(self.image, ctx)
-        ##self.image.do_draw(self.image.get_parent_window(), ctx)
-        ##ctx.show_text("This is hello")
-        #self.image.draw(ctx)
-        #ctx.restore()
-
-        #self.queue_draw()
-        #ctx.show_text(self.txt_tst_buf)
         ctx.restore()
 
         Gtk.Container.do_draw(self, ctx)
@@ -203,9 +165,7 @@ class SubdocView(Gtk.Container):
                             self.remove(widget)
                             self.subdoc_new()
 
-        retval = Gtk.Container.do_key_press_event(self, event)
-        print ("   %s" % str(retval))
-        return retval
+        return Gtk.Container.do_key_press_event(self, event)
 
     # Gtk.Container methods override
     def do_child_type(self):
@@ -246,10 +206,6 @@ class SubdocView(Gtk.Container):
         try:
             for docid, widget in self.childrens.items():
                 callback(widget)
-                #if ch.eventbox:
-                #    callback (ch.eventbox)
-                #else:
-                #    callback (ch.widget)
         except AttributeError:
             pass # print 'AttribError'
 
@@ -280,7 +236,7 @@ class SubdocView(Gtk.Container):
         elif subdoc_type == SubdocView.IMAGE:
             print("Image insertion asked")
         else:
-            raise AttributeError
+            raise NotImplemented
 
         widget.connect("focus-in-event", self.on_child_focus_in)
 

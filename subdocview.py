@@ -21,6 +21,10 @@ class SubdocView(Gtk.Container):
     # 'Static' class members
     block_insert_btn = None
     block_remove_btn = None
+    block_change_combo = None
+    ignore_combo_signal = False
+
+    block_in_focus = None
 
     # toolbar handling using class methods
     @classmethod
@@ -35,12 +39,27 @@ class SubdocView(Gtk.Container):
             cls.block_remove_btn.show()
             toolbar.insert(cls.block_remove_btn, -1)
 
+        if cls.block_change_combo is None:
+            model = Gtk.ListStore(GObject.TYPE_INT, GObject.TYPE_STRING)
+            model.append([SubdocView.PARAGRAPH, "Paragraph"])
+            model.append([SubdocView.IMAGE, "Image"])
+            cls.block_change_combo = Gtk.ComboBox.new_with_model_and_entry(model)
+            cls.block_change_combo.set_entry_text_column(1)
+            cls.block_change_combo.set_active(0) # 1st row
+
+            item = Gtk.ToolItem.new()
+            item.add(cls.block_change_combo)
+            item.show_all()
+            toolbar.insert(item, -1)
+
             sep = Gtk.SeparatorToolItem()
             sep.show()
             toolbar.insert(sep, -1)
 
         cls.block_insert_btn.connect('clicked', self.on_block_insert_clicked)
         cls.block_remove_btn.connect('clicked', self.on_block_remove_clicked)
+        self.sigid_block_combo_changed = \
+        cls.block_change_combo.connect('changed', self.on_combo_block_changed)
 
     def __init__(self, elements_toolbar):
         Gtk.Container.__init__(self)
@@ -189,6 +208,20 @@ class SubdocView(Gtk.Container):
     def on_child_focus_in(self, widget, event):
         #print('on_child_focus_in', widget, event)
 
+        # Class variable to store this reference
+        SubdocView.block_in_focus = widget
+
+        # Update combo block to match the subclass
+        SubdocView.ignore_combo_signal = True
+        clsname = widget.__class__.__name__
+        if clsname == 'EditorTextView':
+            SubdocView.block_change_combo.set_active(0)
+        elif clsname == 'ImageView':
+            SubdocView.block_change_combo.set_active(1)
+        else:
+            raise AttributeError
+        SubdocView.ignore_combo_signal = False
+
         # Find widget in list and put cursor_idx up to date
         for key, child in self.childrens.items():
             if child == widget:
@@ -224,6 +257,20 @@ class SubdocView(Gtk.Container):
             #if self.childrens[self.cursor_idx].is_focus():
             if self.nb_blocks > 0 and self.cursor_idx != 0:
                 self.block_remove(self.cursor_idx)
+
+    def on_combo_block_changed(self, combo):
+        #print("combo is now", combo.get_active())
+        if not SubdocView.ignore_combo_signal:
+            child = SubdocView.block_in_focus
+            if child and child.get_parent() == self:
+                for blockid, widget in self.childrens.items():
+                    if widget == child:
+                        #print('will add/remove/add')
+                        if combo.get_active() == SubdocView.PARAGRAPH - 1:
+                            self.block_add_at_index(blockid, block_type = SubdocView.PARAGRAPH)
+                        elif combo.get_active() == SubdocView.IMAGE - 1:
+                            self.block_add_at_index(blockid, block_type = SubdocView.IMAGE)
+                        self.block_remove(blockid+1)
 
     # Application accessors
     def _block_new(self, block_type = PARAGRAPH):

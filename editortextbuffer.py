@@ -76,16 +76,17 @@ class EditorTextBuffer(GtkSource.Buffer):
         return self.get_text(start_iter, end_iter, include_hidden_chars)
 
     def set_content_from_html(self, text):
-        self._buf_internal_access(True)
+        if text:
+            self._buf_internal_access(True)
 
-        start_iter = self.get_start_iter()
-        end_iter = self.get_end_iter()
-        self.delete(start_iter, end_iter)
+            start_iter = self.get_start_iter()
+            end_iter = self.get_end_iter()
+            self.delete(start_iter, end_iter)
 
-        #start_iter = self.get_start_iter()
-        self.insert(start_iter, text)
+            #start_iter = self.get_start_iter()
+            self.insert(start_iter, text)
 
-        self._buf_internal_access(False)
+            self._buf_internal_access(False)
 
     def get_content_as_html(self):
         return unicode(self.get_content_as_text(), encoding='utf-8')

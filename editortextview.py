@@ -46,8 +46,8 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
             else:
                 w.hide()
 
-    def __init__(self, elements_toolbar):
-        GtkSource.View.__init__(self)
+    def __init__(self, elements_toolbar, **args):
+        GtkSource.View.__init__(self, **args)
 
         self.set_size_request(600, -1)
 

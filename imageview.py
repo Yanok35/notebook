@@ -277,7 +277,7 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
             self.grab_focus()
         elif event.type == Gdk.EventType._2BUTTON_PRESS:
             print("double click")
-        
+            self.dialog_edit_image_property()
         return True
 
     def do_button_release_event(self, event):
@@ -613,6 +613,24 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
         #self.set_vexpand(False)
         self.set_size_request(w, h)
         #self.set_size(w, h)
+
+    def dialog_edit_image_property(self):
+        builder = Gtk.Builder.new_from_file("imageview.ui")
+        builder.connect_signals(self)
+        self.dialog = builder.get_object('dialog_img_properties')
+
+        # This call is blocking until user close the dialog.
+        response = self.dialog.run()
+        #if response == Gtk.ResponseType.OK:
+
+        self.dialog.destroy()
+        self.dialog = None
+
+    def on_dialog_button_close_clicked(self, btn):
+        print("close")
+        self.dialog.response(Gtk.ResponseType.OK)
+
+        pass
 
     #def on_key_press_event(self, window, event):
     #    key = Gdk.keyval_name(event.keyval)

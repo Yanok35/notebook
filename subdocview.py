@@ -259,15 +259,15 @@ class SubdocView(Gtk.Container):
         for i in list(reversed(range(index, self.nb_blocks))):
             self.childrens[i+1] = self.childrens[i]
 
-        subdoc = self._block_new(**args)
-        self.childrens[index] = subdoc
+        block = self._block_new(**args)
+        self.childrens[index] = block
         self.nb_blocks += 1
 
         # self.cursor_idx will be updated in signal "focus-in-event"
-        subdoc.grab_focus()
+        block.grab_focus()
         self.queue_resize()
 
-        return subdoc
+        return block
 
     def block_add_after_cursor(self, **args):
         return self.block_add_at_index(self.cursor_idx + 1, **args)

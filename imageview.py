@@ -162,7 +162,7 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
     def do_button_release_event(self, event):
         if event.type == Gdk.EventType.BUTTON_RELEASE:
             print("button_release:")
-            if self.button1_action == 'move':
+            if self.button1_active and self.button1_action == 'move':
                 self.childwidget_posx = self.child_newx
                 self.childwidget_posy = self.child_newy
             self.button1_active = False

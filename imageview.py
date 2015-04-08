@@ -18,9 +18,6 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
 
         self.set_size_request(600, 50)
         self.set_hexpand(False)
-        #self.set_double_buffered(False)
-        #self.set_has_window(True)
-        #self.set_has_window(False)
         self.set_border_width(10) # for debug only
         self.button1_active = False
         #self.add_events(Gdk.EventMask.KEY_PRESS_MASK)
@@ -56,93 +53,6 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
 
         #self.add(img)
         self.show_all()
-
-#    def do_get_request_mode(self):
-#        #return(Gtk.SizeRequestMode.HEIGHT_FOR_WIDTH)
-#        return(Gtk.SizeRequestMode.CONSTANT_SIZE)
-
-    # Gtk.Widget methods override
-
-    #def do_ajust_size_request(self, orientation, minimum_size, natural_size):
-    #    print("do_ajust_size_request")
-    #    return Gtk.Widget.do_adjust_size_allocation(self, orientation, minimum_size, natural_size)
-
-#    def do_adjust_size_allocation(self,
-#            orientation, minimum_size, natural_size, allocated_pos, allocated_size):
-#        print("do_adjust_size_allocation")
-#        print(orientation, minimum_size, natural_size, allocated_pos, allocated_size)
-##        return super(ImageView, self).do_adjust_size_allocation(self,
-##            orientation, minimum_size, natural_size, allocated_pos, allocated_size)
-##        return Gtk.Container.do_adjust_size_allocation(self,
-##            orientation, minimum_size, natural_size, allocated_pos, allocated_size)
-#        pass
-
-#    def do_get_preferred_width(self):
-#        #print("do_get_preferred_width")
-#        mini = 2 * self.get_border_width()
-#        natural = mini
-#        for docid, ch in self.childrens.items():
-#            child_mini, child_natural = ch.get_preferred_width()
-#            if child_mini > mini:
-#                mini = child_mini
-#            if child_natural > natural:
-#                natural = child_natural
-#
-#        return (mini, natural)
-#
-#    def do_get_preferred_height(self):
-#        #print("do_get_preferred_height")
-#        b = self.get_border_width()
-#        mini = b
-#        natural = mini
-#        #print("")
-#        for docid, ch in self.childrens.items():
-#            child_mini, child_natural = ch.get_preferred_height()
-#            #print(ch, child_mini, child_natural)
-#            mini += child_mini + b
-#            natural += child_natural + b
-#
-#        return (mini, natural)
-#
-##    def do_get_preferred_height_for_width(self, width):
-##        print('do_get_preferred_height_for_width')
-##        return self.do_get_preferred_height()
-##
-##    def do_get_preferred_width_for_height(self, height):
-##        print('do_get_preferred_width_for_height')
-##        return self.do_get_preferred_width()
-#
-#    #def do_get_preferred_height_and_baseline_for_width(self, width):
-#    #    print('do_get_preferred_height_and_baseline_for_width')
-#    #    return self.do_get_preferred_height()
-#
-#    def do_size_allocate(self, allocation):
-#        #print('do_size_allocate')
-#        self.set_allocation(allocation)
-#        #print("parent [x,y,w,h]=", allocation.x,
-#        #    allocation.y, allocation.width, allocation.height)
-#
-#        b = self.get_border_width()
-#        child_alloc = Gdk.Rectangle()
-#        child_alloc.x = allocation.x + b
-#        child_alloc.y = allocation.y + b
-#        for key, child in self.childrens.items():
-#            #child_alloc.width, _dont_care_ = child.get_preferred_width()
-#            if child_alloc.width < allocation.width - 2 * b:
-#                child_alloc.width = allocation.width - 2 * b
-#            child_alloc.height, _dont_care_ = child.get_preferred_height()
-#            child.size_allocate(child_alloc)
-#            #print("child %d [x,y,w,h]=" % docid,
-#            #    child_alloc.x, child_alloc.y, child_alloc.width, child_alloc.height)
-#            child_alloc.y += child_alloc.height + b
-#
-#        if self.get_realized():
-#            Gdk.Window.move_resize(self.window,
-#                allocation.x, allocation.y, allocation.width, allocation.height)
-#            #Gdk.Window.resize
-#
-#            #Gdk.Window.invalidate_rect(self.get_window(), allocation, True)
-#            #Gdk.Window.process_updates(self.get_window(), True)
 
     def do_draw(self, ctx):
         #print('do_draw')
@@ -224,43 +134,6 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
         # ctx.restore()
 
         return True
-
-    #def do_map(self):
-    #    print "do map"
-    #    self.set_mapped(True)
-    #    Gdk.Window.show(self.window)
-    #    #Gdk.
-    #    pass
-
-#    def do_realize(self):
-#        #print "do_realize"
-#
-#        self.set_realized(True)
-#
-#        allocation = self.get_allocation()
-#        #print(allocation.x, allocation.y, allocation.width, allocation.height)
-#        attr = Gdk.WindowAttr()
-#        attr.window_type = Gdk.WindowType.CHILD
-#        attr.wclass = Gdk.WindowWindowClass.INPUT_OUTPUT
-#        attr.x = allocation.x
-#        attr.y = allocation.y
-#        attr.width = allocation.width
-#        attr.height = allocation.height
-#        attr.visual = self.get_visual()
-#        attr.event_mask = self.get_events() | Gdk.EventMask.EXPOSURE_MASK
-#        attr.event_mask |= Gdk.EventMask.BUTTON_PRESS_MASK
-#        attr.event_mask |= Gdk.EventMask.BUTTON_RELEASE_MASK
-#        attr.event_mask |= Gdk.EventMask.POINTER_MOTION_MASK
-#        # pointer event only when clicked.
-#        #attr.event_mask |= Gdk.EventMask.BUTTON1_MOTION_MASK
-#
-#        WAT = Gdk.WindowAttributesType
-#        mask = WAT.X | WAT.Y | WAT.VISUAL
-#        self.window = Gdk.Window(self.get_parent_window(), attr, mask);
-#        self.set_window(self.window)
-#        self.register_window(self.window)
-#
-#        self.set_has_window(True)
 
     def do_button_press_event(self, event):
         #print(str(event.type))
@@ -427,7 +300,7 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
                     self.button1_starty = event.y
 
         else:
-            # button1 inactive...
+            # do_motion_notify_event() while button1 inactive.
             pass
             #rect = self.get_allocation()
             
@@ -468,105 +341,6 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
             return False
 
         return True
-
-    #    # Catch iter of the current cursor position
-    #    buf = self.get_buffer()
-    #    mark = buf.get_mark('insert')
-    #    cur_iter = buf.get_iter_at_mark(mark)
-    #    start_iter = buf.get_start_iter()
-    #    end_iter = buf.get_end_iter()
-
-    #    # Do not treat "Return" key normally... event is
-    #    # up to subdocview container for block container addition
-    #    if key == 'Return':
-    #        if (event.state & Gdk.ModifierType.CONTROL_MASK) \
-    #            or (event.state & Gdk.ModifierType.SHIFT_MASK) \
-    #            or (event.state & Gdk.ModifierType.MOD1_MASK):
-    #                pass
-    #        else:
-    #            print('Return key-press-event is up to subdoc view...')
-    #            return False
-    #    elif key =='BackSpace' \
-    #        and not buf.get_property('has-selection') \
-    #        and cur_iter.compare(start_iter) == 0:
-    #            print("Backspace! delete itself (if empty) and change block - 1, last_pos")
-    #            print("or merge with block - 1, if previous is text")
-    #            return False
-    #    elif key in ('Up', 'Down', 'Left', 'Right'):
-    #        #print("cur_iter (av move!) l %d : c %d" % (cur_iter.get_line(), cur_iter.get_line_index()))
-    #        #print("  visible: l %d : c %d" % (cur_iter.get_line(), cur_iter.get_visible_line_index()))
-
-    #        if key == 'Left' and cur_iter.compare(start_iter) == 0:
-    #            print("start of buf : should change block - 1, last_pos")
-    #        elif key == 'Right' and cur_iter.compare(end_iter) == 0:
-    #            print("end of buf : should change block + 1, first_pos")
-    #        elif key == 'Up':
-    #            next_line = cur_iter.copy()
-    #            possible = self.backward_display_line(next_line)
-    #            if not possible:
-    #                print("first line : should change block - 1, pos %d" % cur_iter.get_line_offset())
-    #                return True
-    #        elif key == 'Down':
-    #            next_line = cur_iter.copy()
-    #            possible = self.forward_display_line(next_line)
-    #            if not possible:
-    #                print("last line : should change block + 1, pos %d" % cur_iter.get_line_offset())
-    #                return True
-    #    else:
-    #        pass #print(key)
-
-    #    ## #print("key_press_event in editortextview")
-    #    retval = GtkSource.View.do_key_press_event(self, event)
-    #    #print ("   %s" % str(retval))
-    #    return retval
-
-    # Gtk.Container methods override
-#    def do_child_type(self):
-#        return Gtk.Widget # ProjectView ?
-#
-#    def do_add(self, widget):
-#        idx = self.nb_blocks
-#        self.childrens[idx] = widget
-#        widget.grab_focus()
-#        self.focused_child = widget
-#        self.nb_blocks += 1
-#
-#        widget.set_parent(self)
-#        if self.get_realized():
-#            widget.set_parent_window(self.get_window())
-#        if widget.get_visible():
-#            self.queue_resize()
-#
-#    def do_remove(self, widget):
-#        for key, val in self.childrens.items():
-#            if val == widget:
-#
-#                if widget == self.focused_child:
-#                    self.focused_child = None
-#
-#                del self.childrens[key]
-#
-#                # Shift all childs indexes
-#                if key < self.nb_blocks - 1:
-#                    for i in range(key, self.nb_blocks - 1):
-#                        self.childrens[i] = self.childrens[i+1]
-#                self.nb_blocks -= 1
-#
-#                if widget.get_visible():
-#                    self.queue_resize()
-#
-#                return
-#
-#    def do_forall(self, include_int, callback):
-#        try:
-#            for docid, widget in self.childrens.items():
-#                callback(widget)
-#                #if ch.eventbox:
-#                #    callback (ch.eventbox)
-#                #else:
-#                #    callback (ch.widget)
-#        except AttributeError:
-#            pass # print 'AttribError'
 
     # ElementBlockInterface implementation
     def get_content_as_text(self):

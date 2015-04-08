@@ -28,8 +28,6 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
 
         #self.set_property('can-focus', True)
 
-        self.childrens = {}
-        self.nb_blocks = 0
         self.childwidget = None
         self.child_newx = 0
         self.child_newy = 0
@@ -154,9 +152,9 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
 
         # Draw a background
         #ctx.set_source_rgb(1, 1, 1) # white
-        ctx.set_source_rgb(0.5, 0.5, 0.5) # grey50
-        ctx.paint()
-        ctx.set_source_rgb(0, 0, 0) # black
+        ##ctx.set_source_rgb(0.5, 0.5, 0.5) # grey50
+        #ctx.paint()
+        #ctx.set_source_rgb(0, 0, 0) # black
 
         # ctx.select_font_face("Sans", cairo.FONT_SLANT_NORMAL,
         #     cairo.FONT_WEIGHT_NORMAL)
@@ -165,27 +163,14 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
         # ctx.show_text("This is hello")
 
         # Cross for layout debugging
-        ctx.set_line_width(1)
-        ctx.move_to(rect.x, rect.y)
-        ctx.line_to(rect.x + rect.width, rect.y + rect.height)
-        ctx.move_to(rect.x + rect.width, rect.y)
-        ctx.line_to(rect.x, rect.y + rect.height)
-        ctx.stroke()
-
-        # Blue rectangle to outline childrends (debug also)
         #ctx.save()
-        for docid, child in self.childrens.items():
-            if not child.get_visible():
-                continue
-            rect = child.get_allocation()
-            if child == self.focused_child:
-                ctx.set_line_width(4)
-            else:
-                ctx.set_line_width(1)
-            ctx.set_source_rgb(0, 1, 0) # green
-            ctx.rectangle(rect.x, rect.y, rect.width, rect.height)
+        if not self.childwidget:
+            ctx.set_line_width(1)
+            ctx.move_to(rect.x, rect.y)
+            ctx.line_to(rect.x + rect.width, rect.y + rect.height)
+            ctx.move_to(rect.x + rect.width, rect.y)
+            ctx.line_to(rect.x, rect.y + rect.height)
             ctx.stroke()
-            #print (rect.x, rect.y, rect.width, rect.height)
         #ctx.restore()
 
         ## Horizontal line to outline subdoc title
@@ -385,7 +370,7 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
                     rect.width + dX, rect.height + dY, GdkPixbuf.InterpType.BILINEAR)
                 new_img = Gtk.Image.new_from_pixbuf(new_pixbuf)
                 new_img.show()
-                self.remove(self.img)
+                self.remove(self.childwidget)
                 self.add(new_img)
                 self.img = new_img
                 self.childwidget = new_img

@@ -9,6 +9,7 @@ from lxml import etree
 from ielementblock import ElementBlockInterface
 from editortextview import EditorTextView
 from editortextbuffer import EditorTextBuffer
+from imageview import ImageView
 
 class SubdocView(Gtk.Container):
     __gtype_name__ = 'SubdocView'
@@ -17,28 +18,28 @@ class SubdocView(Gtk.Container):
     IMAGE = 2
 
     # 'Static' class members
-    subdoc_insert_btn = None
-    subdoc_remove_btn = None
+    block_insert_btn = None
+    block_remove_btn = None
 
     # toolbar handling using class methods
     @classmethod
     def toolbar_create(cls, toolbar, self):
-        if cls.subdoc_insert_btn is None:
-            cls.subdoc_insert_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_NEW)
-            cls.subdoc_insert_btn.show()
-            toolbar.insert(cls.subdoc_insert_btn, -1)
+        if cls.block_insert_btn is None:
+            cls.block_insert_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_NEW)
+            cls.block_insert_btn.show()
+            toolbar.insert(cls.block_insert_btn, -1)
 
-        if cls.subdoc_remove_btn is None:
-            cls.subdoc_remove_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_REMOVE)
-            cls.subdoc_remove_btn.show()
-            toolbar.insert(cls.subdoc_remove_btn, -1)
+        if cls.block_remove_btn is None:
+            cls.block_remove_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_REMOVE)
+            cls.block_remove_btn.show()
+            toolbar.insert(cls.block_remove_btn, -1)
 
             sep = Gtk.SeparatorToolItem()
             sep.show()
             toolbar.insert(sep, -1)
 
-        cls.subdoc_insert_btn.connect('clicked', self.on_subdoc_insert_clicked)
-        cls.subdoc_remove_btn.connect('clicked', self.on_subdoc_remove_clicked)
+        cls.block_insert_btn.connect('clicked', self.on_block_insert_clicked)
+        cls.block_remove_btn.connect('clicked', self.on_block_remove_clicked)
 
     def __init__(self, elements_toolbar):
         Gtk.Container.__init__(self)
@@ -47,12 +48,13 @@ class SubdocView(Gtk.Container):
 
         self.childrens = {} # list of block elements
         self.nb_blocks = 0
-        self.focused_child = None
+        self.cursor_idx = 0 # index of currently focused block element
 
         self.set_has_window(False)
         self.set_border_width(10) # for debug only
 
         self.elements_toolbar = elements_toolbar
+        assert(self.elements_toolbar is not None)
         SubdocView.toolbar_create(elements_toolbar, self)
 
     def do_get_request_mode(self):
@@ -130,7 +132,7 @@ class SubdocView(Gtk.Container):
             if not child.get_visible():
                 continue
             rect = child.get_allocation()
-            if child == self.focused_child:
+            if child.is_focus():
                 ctx.set_line_width(4)
             else:
                 ctx.set_line_width(1)
@@ -150,20 +152,15 @@ class SubdocView(Gtk.Container):
         key = Gdk.keyval_name(event.keyval)
         if key == 'Return':
             print("todo: check block items focused, catch cursor and split if needed")
-            self.subdoc_new()
+            self.block_add_after_cursor()
             return True
+            ### w = self.block_add_at_end(block_type = SubdocView.IMAGE)
+            ### #w.load_image_from_file("oshw-logo-800-px.png")
+            ### w.load_image_from_file("Firefox_Old_Logo_small.png")
+            ### return True
         elif key =='BackSpace':
-            if self.focused_child and self.focused_child.is_deletable():
-                for key, widget in self.childrens.items():
-                    if widget == self.focused_child:
-                        if key > 0:
-                            self.remove(widget)
-                            self.focused_child = self.childrens[key-1]
-                            self.focused_child.grab_focus()
-                            self.queue_draw()
-                        else:
-                            self.remove(widget)
-                            self.subdoc_new()
+            if self.nb_blocks > 0 and self.cursor_idx != 0:
+                self.block_remove(self.cursor_idx)
 
         return Gtk.Container.do_key_press_event(self, event)
 
@@ -173,34 +170,12 @@ class SubdocView(Gtk.Container):
 
     def do_add(self, widget):
         widget.set_parent(self)
-        idx = self.nb_blocks
-        self.childrens[idx] = widget
-        widget.grab_focus()
-        self.focused_child = widget
-        self.nb_blocks += 1
-
-        if widget.get_visible():
-            self.queue_resize()
 
     def do_remove(self, widget):
         for key, val in self.childrens.items():
             if val == widget:
-
-                if widget == self.focused_child:
-                    self.focused_child = None
-
-                del self.childrens[key]
-
-                # Shift all childs indexes
-                if key < self.nb_blocks - 1:
-                    for i in range(key, self.nb_blocks - 1):
-                        self.childrens[i] = self.childrens[i+1]
-                self.nb_blocks -= 1
-
-                if widget.get_visible():
-                    self.queue_resize()
-
-                return
+                widget.unparent()
+                self.queue_resize()
 
     def do_forall(self, include_int, callback):
         try:
@@ -211,40 +186,119 @@ class SubdocView(Gtk.Container):
 
     # Signals (mostly from childs)
     def on_child_focus_in(self, widget, event):
-        #print(event)
-        self.focused_child = widget
-        self.queue_draw()
+        #print('on_child_focus_in', widget, event)
 
-    def on_subdoc_insert_clicked(self, btn):
-        if self.is_focus():
-            print('on_subdoc_insert_clicked')
-            print(self)
+        # Find widget in list and put cursor_idx up to date
+        for key, child in self.childrens.items():
+            if child == widget:
+                self.cursor_idx = key
 
-    def on_subdoc_remove_clicked(self, btn):
-        if self.is_focus():
-            print('on_subdoc_remove_clicked')
-            print(self)
+        # We should redraw the projectview widget. parent of subdocview
+        # TODO: find another way to propagate this ?
+        self.get_parent().queue_draw()
+
+    def on_child_cursor_move(self, widget, direction):
+        #print('on_child_cursor_move', widget, direction)
+        #print('   idx = %d in list : ' % self.cursor_idx, self.childrens.items())
+        prev_index = self.cursor_idx
+        if direction == ElementBlockInterface.CursorDirection.UP:
+            if self.cursor_idx > 0:
+                self.cursor_idx -= 1
+        elif direction == ElementBlockInterface.CursorDirection.DOWN:
+            if self.nb_blocks and self.cursor_idx < self.nb_blocks - 1:
+                self.cursor_idx += 1
+
+        if self.cursor_idx != prev_index:
+            self.childrens[self.cursor_idx].grab_focus()
+            self.get_parent().queue_draw()
+
+    def on_block_insert_clicked(self, btn):
+        if self.get_focus_child():
+            #print('insert_at %d', self.cursor_idx)
+            self.block_add_at_index(self.cursor_idx)
+
+    def on_block_remove_clicked(self, btn):
+        if self.get_focus_child():
+            #print('on_block_remove_clicked')
+            #if self.childrens[self.cursor_idx].is_focus():
+            if self.nb_blocks > 0 and self.cursor_idx != 0:
+                self.block_remove(self.cursor_idx)
 
     # Application accessors
-    def subdoc_new(self, subdoc_type = PARAGRAPH):
-        #print("subdoc_new:")
-        if subdoc_type == SubdocView.PARAGRAPH:
+    def _block_new(self, block_type = PARAGRAPH):
+        #print("_block_new:")
+        if block_type == SubdocView.PARAGRAPH:
             buf = EditorTextBuffer()
             widget = EditorTextView(self.elements_toolbar)
             widget.set_buffer(buf)
-            self.add(widget)
-        elif subdoc_type == SubdocView.IMAGE:
-            print("Image insertion asked")
+        elif block_type == SubdocView.IMAGE:
+            #print("Image insertion asked")
+            widget = ImageView()
         else:
             raise NotImplemented
 
         widget.connect("focus-in-event", self.on_child_focus_in)
+        widget.connect("cursor-move", self.on_child_cursor_move)
+
+        self.add(widget)
+
+        return widget
+
+    def block_add_at_end(self, **args):
+        return self.block_add_at_index(self.nb_blocks, **args)
+
+    def block_add_at_index(self, index, **args):
+        assert(index >= 0 and index <= self.nb_blocks)
+
+        # chain element at 'index' pos in childrens list.
+        for i in list(reversed(range(index, self.nb_blocks))):
+            self.childrens[i+1] = self.childrens[i]
+
+        subdoc = self._block_new(**args)
+        self.childrens[index] = subdoc
+        self.nb_blocks += 1
+
+        # self.cursor_idx will be updated in signal "focus-in-event"
+        subdoc.grab_focus()
+        self.queue_resize()
+
+        return subdoc
+
+    def block_add_after_cursor(self):
+        return self.block_add_at_index(self.cursor_idx + 1)
+
+    def block_remove(self, index):
+        assert(index >= 0 and index <= self.nb_blocks)
+
+        self.remove(self.childrens[index])
+        del self.childrens[index]
+
+        #from IPython import embed
+        #embed()
+
+        # move elements after 'index', *up* in the childrens list.
+        shift_occured = False
+        for i in range(index, self.nb_blocks - 1):
+            self.childrens[i] = self.childrens[i+1]
+            shift_occured = True
+
+        if shift_occured:
+            del self.childrens[self.nb_blocks - 1]
+        self.nb_blocks -= 1
+
+        if self.cursor_idx >= index and self.cursor_idx > 0:
+            self.cursor_idx -= 1
+            self.childrens[self.cursor_idx].grab_focus()
+
+        self.queue_resize()
+
+    def block_remove_all(self):
+        while self.nb_blocks:
+            self.block_remove(self.nb_blocks - 1)
 
     def load_from_file(self, filename):
 
-        # Remove previous widgets (should be done elsewhere !)
-        while self.nb_blocks != 0:
-            self.remove(self.childrens[self.nb_blocks-1])
+        self.block_remove_all()
 
         with open(filename, 'r') as f:
             data = f.read()
@@ -256,10 +310,10 @@ class SubdocView(Gtk.Container):
 
             para_list = subdoc.findall('p')
             for para in para_list:
-                self.subdoc_new(subdoc_type = SubdocView.PARAGRAPH)
-                sub = self.childrens[self.nb_blocks-1]
-                assert (sub is not None)
-                sub.set_content_from_html(para.text)
+                widget = self.block_add_at_end(block_type = SubdocView.PARAGRAPH)
+                #sub = self.childrens[self.nb_blocks-1]
+                #assert (sub is not None)
+                widget.set_content_from_html(para.text)
 
     def save_to_file(self, filename):
         subdoc = etree.Element('subdoc')

@@ -272,8 +272,9 @@ class ProjectView(Gtk.Container):
     def subdoc_new(self, docid):
         #print("subdoc_new:", docid)
         subdoc = SubdocView(self.elements_toolbar)
-        subdoc.subdoc_new()
-        subdoc.__setattr__("docid", docid)
+        #subdoc.subdoc_append()
+        subdoc.block_add_at_end()
+        subdoc.__setattr__("docid", docid) # TODO: move this into constructor
         self.add(subdoc)
 
         label_widget = Gtk.Label()

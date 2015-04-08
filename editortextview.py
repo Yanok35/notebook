@@ -2,13 +2,17 @@
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
+import copy
+
 from gi.repository import Gdk, Gtk, GtkSource, Pango
 
-from ielementblock import ElementBlockInterface
+from ielementblock import *
 from editortextbuffer import EditorTextBuffer
 
 class EditorTextView(GtkSource.View, ElementBlockInterface):
     __gtype_name__ = 'EditorTextView'
+
+    __gsignals__ = copy.copy(ElementBlockInterface.__gsignals__)
 
     # 'Static' class members
     bold_btn = None
@@ -134,12 +138,14 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
                 possible = self.backward_display_line(next_line)
                 if not possible:
                     print("first line : should change block - 1, pos %d" % cur_iter.get_line_offset())
+                    self.emit('cursor-move', ElementBlockInterface.CursorDirection.UP)
                     return True
             elif key == 'Down':
                 next_line = cur_iter.copy()
                 possible = self.forward_display_line(next_line)
                 if not possible:
                     print("last line : should change block + 1, pos %d" % cur_iter.get_line_offset())
+                    self.emit('cursor-move', ElementBlockInterface.CursorDirection.DOWN)
                     return True
         else:
             pass #print(key)

@@ -2,12 +2,16 @@
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
+import copy
+
 from gi.repository import Gdk, GdkPixbuf, GObject, Gtk, GtkSource, Pango
 
 from ielementblock import ElementBlockInterface
 
 class ImageView(Gtk.Layout, ElementBlockInterface):
     __gtype_name__ = 'ImageView'
+
+    __gsignals__ = copy.copy(ElementBlockInterface.__gsignals__)
 
     def __init__(self, **args):
         Gtk.Layout.__init__(self, **args)

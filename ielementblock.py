@@ -5,9 +5,14 @@
 from gi.repository import GObject, Gtk
 
 # Interface definition
-class ElementBlockInterface(Gtk.Widget):
-    def __init__(self):
-        Gtk.Widget.__init__(self)
+class ElementBlockInterface(object):
+    __gsignals__ = {
+        str('cursor-move'): (GObject.SIGNAL_RUN_FIRST, None, (int,)),
+    }
+
+    class CursorDirection:
+        UP = 1
+        DOWN = 2
 
     def is_deletable(self):
         raise NotImplemented
@@ -23,6 +28,4 @@ class ElementBlockInterface(Gtk.Widget):
 
     def set_content_from_html(self, html):
         raise NotImplemented
-
-GObject.type_register(ElementBlockInterface)
 

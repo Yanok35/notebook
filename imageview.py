@@ -365,14 +365,13 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
                 
                 rect = self.get_allocation()
 
-                pixbuf = self.img.get_pixbuf()
+                pixbuf = self.img_orig.get_pixbuf()
                 new_pixbuf = pixbuf.scale_simple(
                     rect.width + dX, rect.height + dY, GdkPixbuf.InterpType.BILINEAR)
                 new_img = Gtk.Image.new_from_pixbuf(new_pixbuf)
                 new_img.show()
                 self.remove(self.childwidget)
                 self.add(new_img)
-                self.img = new_img
                 self.childwidget = new_img
                 #del pixbuf
 
@@ -609,7 +608,7 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
 
         w, _dont_care_ = img.get_preferred_width()
         h, _dont_care_ = img.get_preferred_height()
-        self.img = img
+        self.img_orig = img
         #self.set_hexpand(False)
         #self.set_vexpand(False)
         self.set_size_request(w, h)

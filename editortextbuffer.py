@@ -24,6 +24,9 @@ class EditorTextBuffer(GtkSource.Buffer):
             style=Pango.Style.ITALIC)
         self.tag_underline = self.create_tag("underline",
             underline=Pango.Underline.SINGLE)
+        self.tag_code = self.create_tag("code",
+            family="Courier")
+
         self.tag_readonly = self.create_tag("readonly",
             editable=False)
         self.tag_blue = self.create_tag("blue",
@@ -59,6 +62,9 @@ class EditorTextBuffer(GtkSource.Buffer):
 
     def get_tag_underline(self):
         return self.tag_underline
+
+    def get_tag_code(self):
+        return self.tag_code
 
     def tag_toggle_on_selection_bound(self, tag):
         bounds = self.get_selection_bounds()

@@ -18,6 +18,7 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
     bold_btn = None
     ital_btn = None
     unde_btn = None
+    code_btn = None
 
     # toolbar handling using class methods
     @classmethod
@@ -34,13 +35,20 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
             cls.unde_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_UNDERLINE)
             toolbar.insert(cls.unde_btn, -1)
 
+        if cls.code_btn is None:
+            cls.code_btn = Gtk.ToolButton()
+            img = Gtk.Image.new_from_file("code-inline-icon.svg")
+            cls.code_btn.set_icon_widget(img)
+            toolbar.insert(cls.code_btn, -1)
+
         cls.bold_btn.connect('clicked', self.on_bold_button_clicked)
         cls.ital_btn.connect('clicked', self.on_italic_button_clicked)
         cls.unde_btn.connect('clicked', self.on_underline_button_clicked)
+        cls.code_btn.connect('clicked', self.on_code_button_clicked)
 
     @classmethod
     def toobar_set_visible(cls, visible):
-        for w in [ cls.bold_btn, cls.ital_btn, cls.unde_btn ]:
+        for w in [ cls.bold_btn, cls.ital_btn, cls.unde_btn, cls.code_btn ]:
             if visible:
                 w.show()
             else:
@@ -166,6 +174,11 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
         if self.is_focus():
             buf = self.get_buffer()
             buf.tag_toggle_on_selection_bound(buf.get_tag_underline())
+
+    def on_code_button_clicked(self, btn):
+        if self.is_focus():
+            buf = self.get_buffer()
+            buf.tag_toggle_on_selection_bound(buf.get_tag_code())
 
     def on_justify_toggled(self, widget, justification):
         self.textview.set_justification(justification)

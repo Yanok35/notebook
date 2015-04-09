@@ -378,7 +378,10 @@ class SubdocView(Gtk.Container):
             tree.write(f, pretty_print=True)
 
     def get_content_as_text(self):
-        assert(self.childrens[0] is not None)
-        return self.childrens[0].get_content_as_text()
+        text = ''
+        for i in range(0, self.nb_blocks):
+            text += self.childrens[i].get_content_as_text()
+            text += '\n'
+        return text
 
 GObject.type_register(SubdocView)

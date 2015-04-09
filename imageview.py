@@ -372,6 +372,13 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
     def get_serialize_tag_name(self):
         return 'img'
 
+    def get_element_serialized(self):
+        return self.model.get_filename()
+
+    def set_element_serialized(self, data):
+        assert(self.model is not None)
+        self.model.load_from_file(data)
+
     def is_deletable(self):
     #    buf = self.get_buffer()
     #    start = buf.get_start_iter()
@@ -384,11 +391,6 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
         self.model.connect('image-changed', self.on_model_image_changed)
         self.model.connect('move', self.on_model_image_move)
         self.queue_draw()
-
-        # for dev only
-        self.model.load_from_file("Firefox_Old_Logo_small.png")
-        self.dialog_edit_image_property()
-        # for dev only
 
     def on_model_image_changed(self, model):
         #print('model-image-changed')

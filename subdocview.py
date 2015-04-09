@@ -287,7 +287,7 @@ class SubdocView(Gtk.Container):
             model = ImageModel()
             widget.set_model(model)
         else:
-            raise NotImplemented
+            raise NotImplementedError
 
         widget.connect("focus-in-event", self.on_child_focus_in)
         widget.connect("cursor-move", self.on_child_cursor_move)
@@ -360,12 +360,13 @@ class SubdocView(Gtk.Container):
             subdoc = etree.fromstring(data)
             assert(subdoc.tag == 'subdoc')
 
-            para_list = subdoc.findall('p')
-            for para in para_list:
-                widget = self.block_add_at_end(block_type = SubdocView.PARAGRAPH)
-                #sub = self.childrens[self.nb_blocks-1]
-                #assert (sub is not None)
-                widget.set_element_serialized(para.text)
+            for child in subdoc:
+                if child.tag == 'p':
+                    widget = self.block_add_at_end(block_type = SubdocView.PARAGRAPH)
+                elif child.tag == 'img':
+                    widget = self.block_add_at_end(block_type = SubdocView.IMAGE)
+
+                widget.set_element_serialized(child.text)
 
     def save_to_file(self, filename):
         subdoc = etree.Element('subdoc')
@@ -384,6 +385,8 @@ class SubdocView(Gtk.Container):
         text = ''
         for i in range(0, self.nb_blocks):
             text += self.childrens[i].get_content_as_text()
+            if not text.endswith('\n'):
+                text += '\n'
             text += '\n'
         return text
 

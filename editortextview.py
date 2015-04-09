@@ -157,18 +157,18 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
 
     def on_bold_button_clicked(self, btn):
         if self.is_focus():
-            print('on_bold_button_clicked')
-            print(self)
+            buf = self.get_buffer()
+            buf.tag_toggle_on_selection_bound(buf.get_tag_bold())
 
     def on_italic_button_clicked(self, btn):
         if self.is_focus():
-            print('on_italic_button_clicked')
-            print(self)
+            buf = self.get_buffer()
+            buf.tag_toggle_on_selection_bound(buf.get_tag_italic())
 
     def on_underline_button_clicked(self, btn):
         if self.is_focus():
-            print('on_underline_button_clicked')
-            print(self)
+            buf = self.get_buffer()
+            buf.tag_toggle_on_selection_bound(buf.get_tag_underline())
 
     def on_justify_toggled(self, widget, justification):
         self.textview.set_justification(justification)

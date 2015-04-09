@@ -54,11 +54,14 @@ class EditorTextBuffer(GtkSource.Buffer):
     def get_tag_underline(self):
         return self.tag_underline
 
-    # def on_apply_tag(self, widget, tag):
-    #     bounds = self.textbuffer.get_selection_bounds()
-    #     if len(bounds) != 0:
-    #         start, end = bounds
-    #         self.textbuffer.apply_tag(tag, start, end)
+    def tag_toggle_on_selection_bound(self, tag):
+        bounds = self.get_selection_bounds()
+        if len(bounds) != 0:
+            start, end = bounds
+            if start.begins_tag(tag) and end.ends_tag(tag):
+                self.remove_tag(tag, start, end)
+            else:
+                self.apply_tag(tag, start, end)
 
     # def on_remove_all_tags(self, widget):
     #     bounds = self.textbuffer.get_selection_bounds()

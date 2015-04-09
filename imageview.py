@@ -7,6 +7,8 @@ import copy
 from gi.repository import Gdk, GdkPixbuf, GObject, Gtk, GtkSource, Pango
 
 from ielementblock import ElementBlockInterface
+from imagemodel import ImageModel
+from imagepropwin import ImagePropWin
 
 class ImageView(Gtk.Layout, ElementBlockInterface):
     __gtype_name__ = 'ImageView'
@@ -28,6 +30,8 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
         self.childwidget = None
         self.child_newx = 0
         self.child_newy = 0
+        self.childwidget_posx = 0
+        self.childwidget_posy = 0
 
         #img = Gtk.Image.new_from_file("oshw-logo-800-px.png")
         #img.connect('button-press-event', self.do_button_press_event)
@@ -52,6 +56,7 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
         #self.add(vp)
 
         #self.add(img)
+        self.model = None
         self.show_all()
 
     def do_draw(self, ctx):
@@ -74,13 +79,14 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
 
         # Cross for layout debugging
         #ctx.save()
-        if not self.childwidget:
-            ctx.set_line_width(1)
-            ctx.move_to(rect.x, rect.y)
-            ctx.line_to(rect.x + rect.width, rect.y + rect.height)
-            ctx.move_to(rect.x + rect.width, rect.y)
-            ctx.line_to(rect.x, rect.y + rect.height)
-            ctx.stroke()
+#        if not self.childwidget:
+        # if not (self.model and self.model.get_image()):
+        #     ctx.set_line_width(1)
+        #     ctx.move_to(rect.x, rect.y)
+        #     ctx.line_to(rect.x + rect.width, rect.y + rect.height)
+        #     ctx.move_to(rect.x + rect.width, rect.y)
+        #     ctx.line_to(rect.x, rect.y + rect.height)
+        #     ctx.stroke()
         #ctx.restore()
 
         ## Horizontal line to outline subdoc title
@@ -228,9 +234,11 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
                 self.child_newx = self.childwidget_posx + (event.x - self.button1_startx)
                 self.child_newy = self.childwidget_posy + (event.y - self.button1_starty)
 
-                self.move(self.childwidget,
-                    self.child_newx,
-                    self.child_newy)
+                self.model.set_image_coord(self.child_newx, self.child_newy)
+
+                #self.move(self.childwidget,
+                #    self.child_newx,
+                #    self.child_newy)
             elif self.button1_action == 'resize':
                 dX = int(event.x - self.button1_startx)
                 dY = int(event.y - self.button1_starty)
@@ -371,60 +379,60 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
     #    return start.compare(end) == 0
         return True
 
-    def load_image_from_file(self, filename):
-        img = Gtk.Image.new_from_file(filename)
-        img.show()
-        assert(self.childwidget is None)
-        self.childwidget = img
-        self.childwidget_posx = 0
-        self.childwidget_posy = 0
+    def set_model(self, model):
+        self.model = model
+        self.model.connect('image-changed', self.on_model_image_changed)
+        self.model.connect('move', self.on_model_image_move)
+        self.queue_draw()
+
+        # for dev only
+        self.model.load_from_file("Firefox_Old_Logo_small.png")
+        self.dialog_edit_image_property()
+        # for dev only
+
+    def on_model_image_changed(self, model):
+        #print('model-image-changed')
+        if self.childwidget:
+            self.remove(self.childwidget)
+
+        img = model.get_image()
+        img.reparent(self)
         self.add(img)
+        self.childwidget = img
 
         w, _dont_care_ = img.get_preferred_width()
         h, _dont_care_ = img.get_preferred_height()
-        self.img_orig = img
         #self.set_hexpand(False)
         #self.set_vexpand(False)
         self.set_size_request(w, h)
-        #self.set_size(w, h)
+
+        # ugly hack
+        self.img_orig = img
+        # ugly hack
+
+        self.queue_draw()
+
+    def on_model_image_move(self, model, x, y):
+        x, y = model.get_image_coord()
+        self.move(self.childwidget, x, y)
+
+    def get_model(self):
+        return self.model
 
     def dialog_edit_image_property(self):
-        builder = Gtk.Builder.new_from_file("imageview.ui")
-        builder.connect_signals(self)
-        self.dialog = builder.get_object('dialog_img_properties')
+        propwin = ImagePropWin()
+        if not self.model:
+            self.model = ImageModel()
+        propwin.set_model(self.model)
+        propwin.show()
 
-        # This call is blocking until user close the dialog.
-        response = self.dialog.run()
-        #if response == Gtk.ResponseType.OK:
+        # Move window near the main window app
+        parent = self.get_parent_window().get_effective_parent()
+        _dont_care_, parent_x, parent_y = parent.get_origin()
+        parent_w = parent.get_width()
+        parent_h = parent.get_height()
 
-        self.dialog.destroy()
-        self.dialog = None
-
-    def on_dialog_button_close_clicked(self, btn):
-        print("close")
-        self.dialog.response(Gtk.ResponseType.OK)
-
-        pass
-
-    #def on_key_press_event(self, window, event):
-    #    key = Gdk.keyval_name(event.keyval)
-
-    #    # debug string :
-    #    #print(key + str(event.state))
-
-    #    if event.state & Gdk.ModifierType.CONTROL_MASK and key in ('o', 's', 'v'):
-    #        if key == 'v':
-    #            pixbuf = self.clipboard.wait_for_image()
-    #            visid = self.textbuffer_visibleid
-    #            if pixbuf != None and visid != -1:
-    #                self.textbuffers[visid].insert_pixbuf_at_cursor(pixbuf)
-    #            else:
-    #                return False
-
-    #            #print ('event catched')
-    #            return True
-
-    #    return False
+        propwin.move(parent_x + parent_w, parent_y)
 
 GObject.type_register(ImageView)
 

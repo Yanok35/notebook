@@ -10,6 +10,7 @@ from ielementblock import ElementBlockInterface
 from editortextview import EditorTextView
 from editortextbuffer import EditorTextBuffer
 from imageview import ImageView
+from imagemodel import ImageModel
 
 class SubdocView(Gtk.Container):
     __gtype_name__ = 'SubdocView'
@@ -231,16 +232,20 @@ class SubdocView(Gtk.Container):
             buf = EditorTextBuffer()
             widget = EditorTextView(self.elements_toolbar)
             widget.set_buffer(buf)
+            self.add(widget)
         elif block_type == SubdocView.IMAGE:
             #print("Image insertion asked")
             widget = ImageView()
+            self.add(widget)
+            model = ImageModel()
+            widget.set_model(model)
         else:
             raise NotImplemented
 
         widget.connect("focus-in-event", self.on_child_focus_in)
         widget.connect("cursor-move", self.on_child_cursor_move)
 
-        self.add(widget)
+        #self.add(widget)
 
         return widget
 
@@ -264,8 +269,8 @@ class SubdocView(Gtk.Container):
 
         return subdoc
 
-    def block_add_after_cursor(self):
-        return self.block_add_at_index(self.cursor_idx + 1)
+    def block_add_after_cursor(self, **args):
+        return self.block_add_at_index(self.cursor_idx + 1, **args)
 
     def block_remove(self, index):
         assert(index >= 0 and index <= self.nb_blocks)

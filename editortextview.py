@@ -54,9 +54,6 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
         self.set_hexpand(True)
         #self.set_vexpand(True)
 
-        self.textbuffers = {} #EditorTextBuffer()
-        self.textbuffer_visibleid = -1 # -1 means an image is displayed
-
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 
         self.textview = self
@@ -179,15 +176,15 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
         assert(buf is not None)
         return buf.get_content_as_text()
 
-    def set_content_from_html(self, text):
+    def set_element_serialized(self, data):
         buf = self.get_buffer()
         assert(buf is not None)
-        return buf.set_content_from_html(text)
+        return buf.set_element_serialized(data)
 
-    def get_content_as_html(self):
+    def get_element_serialized(self):
         buf = self.get_buffer()
         assert(buf is not None)
-        return buf.get_content_as_html()
+        return buf.get_element_serialized()
 
     def get_serialize_tag_name(self):
         return 'p'

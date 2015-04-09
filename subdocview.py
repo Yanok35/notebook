@@ -365,7 +365,7 @@ class SubdocView(Gtk.Container):
                 widget = self.block_add_at_end(block_type = SubdocView.PARAGRAPH)
                 #sub = self.childrens[self.nb_blocks-1]
                 #assert (sub is not None)
-                widget.set_content_from_html(para.text)
+                widget.set_element_serialized(para.text)
 
     def save_to_file(self, filename):
         subdoc = etree.Element('subdoc')
@@ -373,7 +373,10 @@ class SubdocView(Gtk.Container):
         for docid, child in self.childrens.items():
             tag_name = child.get_serialize_tag_name()
             childnode = etree.SubElement(subdoc, tag_name)
-            childnode.text = child.get_content_as_html()
+            try:
+                childnode.text = child.get_element_serialized()
+            except NotImplementedError:
+                print ('*** Warning: Element ' + str(child) + ' does not support serialize')
         with open(filename, 'w') as f:
             tree.write(f, pretty_print=True)
 

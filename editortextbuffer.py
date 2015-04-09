@@ -1,6 +1,12 @@
 #!/usr/bin/env python
+# -*- coding: utf8 -*-
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
+
+# Unicode support
+from __future__ import unicode_literals
+
+import binascii
 
 from gi.repository import Gdk, Gtk, GtkSource, Pango
 
@@ -78,21 +84,27 @@ class EditorTextBuffer(GtkSource.Buffer):
         include_hidden_chars = False
         return self.get_text(start_iter, end_iter, include_hidden_chars)
 
-    def set_content_from_html(self, text):
-        if text:
-            self._buf_internal_access(True)
+    def set_element_serialized(self, data):
+        self._buf_internal_access(True)
 
-            start_iter = self.get_start_iter()
-            end_iter = self.get_end_iter()
-            self.delete(start_iter, end_iter)
+	# Reset buffer content
+        start_iter = self.get_start_iter()
+        end_iter = self.get_end_iter()
+        self.delete(start_iter, end_iter)
 
-            #start_iter = self.get_start_iter()
-            self.insert(start_iter, text)
+	# Unserialize data
+        serformat = self.register_deserialize_tagset()
+        text = binascii.unhexlify(data)
+        self.deserialize(self, serformat, start_iter, text)
 
-            self._buf_internal_access(False)
+        self._buf_internal_access(False)
 
-    def get_content_as_html(self):
-        return unicode(self.get_content_as_text(), encoding='utf-8')
+    def get_element_serialized(self):
+        print('get_content_as_html in textbuf')
+        start_iter = self.get_start_iter()
+        end_iter = self.get_end_iter()
+        serformat = self.register_serialize_tagset()
+        return binascii.hexlify(self.serialize(self, serformat, start_iter, end_iter))
 
     def insert_pixbuf_at_cursor(self, pixbuf):
         mark = self.get_mark('insert')

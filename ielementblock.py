@@ -15,17 +15,23 @@ class ElementBlockInterface(object):
         DOWN = 2
 
     def is_deletable(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def get_content_as_html(self):
-        raise NotImplemented
-
-    def get_serialize_tag_name(self):
-        raise NotImplemented
-
-    def get_content_as_text(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def set_content_from_html(self, html):
-        raise NotImplemented
+        raise NotImplementedError
+
+    def get_content_as_text(self):
+        raise NotImplementedError
+
+    def get_serialize_tag_name(self):
+        raise NotImplementedError
+
+    def get_element_serialized(self):
+        raise NotImplementedError
+
+    def set_element_serialized(self, data):
+        raise NotImplementedError
 

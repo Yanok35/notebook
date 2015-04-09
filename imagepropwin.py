@@ -15,17 +15,35 @@ class ImagePropWin(Gtk.Window):
 
     #__gsignals__ = copy.copy(ElementBlockInterface.__gsignals__)
 
+    __instance__ = None # Singleton
+
     def __init__(self, **args):
         Gtk.Window.__init__(self, **args)
         self.builder = Gtk.Builder.new_from_file("imageview.ui")
         self.builder.connect_signals(self)
         container = self.builder.get_object('win-root-container')
         container.unparent()
+        container.show_all()
         self.add(container)
-        self.show_all()
 
         self.model = None
         self._sensitive_update_all()
+
+    # TODO: This could be factorized in a super class named "Singleton"
+    @classmethod
+    def get_instance(cls, **args):
+        if cls.__instance__ == None:
+            cls.__instance__ = cls(**args)
+        return cls.__instance__
+
+    # Gtk.Widget overrides
+    def do_delete_event(self, event):
+        # Here we can block 'delete' signal propagation on window manager close event
+        # disable right now...
+        return False # True
+
+    def do_destroy(self):
+        ImagePropWin.__instance__ = None
 
     # Privates methods
     def _sensitive_update_all(self):
@@ -99,7 +117,7 @@ class ImagePropWin(Gtk.Window):
 
     # Window bottom buttons
     def on_button_close_clicked(self, btn):
-        self.destroy()
+        self.hide()
 
     def on_button_reset_all_clicked(self, btn):
         print("reset all parameters")

@@ -224,6 +224,13 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
 
         return (action, cursor, direction)
 
+    def do_focus_in_event(self, event):
+
+        propwin = ImagePropWin.get_instance()
+        propwin.set_model(self.model)
+
+        #Gtk.Widget.do_focus_in_event(self, event)
+
     def do_motion_notify_event(self, event):
 
         action, cursor, direction = self._get_action_from_pointer_pos(event)
@@ -422,7 +429,7 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
         return self.model
 
     def dialog_edit_image_property(self):
-        propwin = ImagePropWin()
+        propwin = ImagePropWin.get_instance()
         if not self.model:
             self.model = ImageModel()
         propwin.set_model(self.model)

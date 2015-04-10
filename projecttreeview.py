@@ -34,6 +34,7 @@ class ProjectTreeView(Gtk.Box):
 
         str('project-export'): (GObject.SIGNAL_RUN_FIRST, None, ()),
         str('render-to-pdf'): (GObject.SIGNAL_RUN_FIRST, None, ()),
+        str('export-to-html'): (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
     def __init__(self):
@@ -82,12 +83,17 @@ class ProjectTreeView(Gtk.Box):
         self.button_export_doc = Gtk.ToolButton.new_from_stock(Gtk.STOCK_EXECUTE)
         self.button_export_doc.connect("clicked", self.on_button_export_doc_clicked)
         self.button_render_to_pdf = Gtk.ToolButton.new_from_stock(Gtk.STOCK_PAGE_SETUP)
-        self.button_render_to_pdf.connect("clicked", self.on_button_render_to_clicked)
-        toolbar.insert(self.button_add_doc, 0)
-        toolbar.insert(self.button_del_doc, 1)
-        toolbar.insert(Gtk.SeparatorToolItem(), 2)
-        toolbar.insert(self.button_export_doc, 3)
-        toolbar.insert(self.button_render_to_pdf, 4)
+        self.button_render_to_pdf.connect("clicked", self.on_button_render_to_pdf_clicked)
+        img = Gtk.Image.new_from_file("icons/export-html.svg")
+        self.button_export_to_html = Gtk.ToolButton()
+        self.button_export_to_html.set_icon_widget(img)
+        self.button_export_to_html.connect("clicked", self.on_button_export_to_html_clicked)
+        toolbar.insert(self.button_add_doc, -1)
+        toolbar.insert(self.button_del_doc, -1)
+        toolbar.insert(Gtk.SeparatorToolItem(), -1)
+        #toolbar.insert(self.button_export_doc, -1)
+        toolbar.insert(self.button_render_to_pdf, -1)
+        toolbar.insert(self.button_export_to_html, -1)
         self.pack_start(toolbar, False, False, 0)
 
         self.scrolledwindow = Gtk.ScrolledWindow()
@@ -443,8 +449,11 @@ class ProjectTreeView(Gtk.Box):
     def on_button_export_doc_clicked(self, widget):
         self.emit('project-export')
 
-    def on_button_render_to_clicked(self, widget):
+    def on_button_render_to_pdf_clicked(self, widget):
         self.emit('render-to-pdf')
+
+    def on_button_export_to_html_clicked(self, widget):
+        self.emit('export-to-html')
 
     def on_treemodel_row_inserted(self, treemodel, path, iter):
         print ("row-inserted", str(path), iter)

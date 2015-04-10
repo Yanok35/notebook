@@ -18,6 +18,8 @@ class EditorTextBuffer(GtkSource.Buffer):
 
         self.buf_internal_access = False
 
+        self.html_tag_translation = {}
+
         self.tag_bold = self.create_tag("bold",
             weight=Pango.Weight.BOLD)
         self.tag_italic = self.create_tag("italic",
@@ -26,6 +28,10 @@ class EditorTextBuffer(GtkSource.Buffer):
             underline=Pango.Underline.SINGLE)
         self.tag_code = self.create_tag("code",
             family="Courier")
+
+        self.html_tag_translation[self.tag_bold] = ["strong"]
+        self.html_tag_translation[self.tag_italic] = ["em"]
+        self.html_tag_translation[self.tag_underline] = ['span class="underline"', 'span']
 
         self.tag_readonly = self.create_tag("readonly",
             editable=False)
@@ -83,6 +89,33 @@ class EditorTextBuffer(GtkSource.Buffer):
 
     # def on_justify_toggled(self, widget, justification):
     #     self.textview.set_justification(justification)
+
+    def get_content_as_html(self):
+        iter = self.get_start_iter()
+        end_iter = self.get_end_iter()
+        text = u''
+
+        while iter.compare(end_iter) != 0:
+            for tag in self.html_tag_translation.keys():
+                if iter.begins_tag(tag):
+                    html_tag = self.html_tag_translation[tag]
+                    text += '<' + html_tag[0] + '>'
+
+            new_char = iter.get_char().decode('utf-8')
+            if new_char == '\n':
+                text += u'<br/>'
+            text += new_char.encode('ascii', errors='xmlcharrefreplace')
+            iter.forward_char()
+
+            for tag in list(reversed(self.html_tag_translation.keys())):
+                if iter.ends_tag(tag):
+                    html_tag = self.html_tag_translation[tag]
+                    text += '</' + html_tag[len(html_tag)-1] + '>'
+
+        #import lxml.html
+        #html = lxml.html.fromstring(text)
+        #text = lxml.html.tostring(html, pretty_print=True)
+        return text
 
     def get_content_as_text(self):
         start_iter = self.get_start_iter()

@@ -184,6 +184,11 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
         self.textview.set_justification(justification)
 
     # ElementBlockInterface implementation
+    def get_content_as_html(self):
+        buf = self.get_buffer()
+        assert(buf is not None)
+        return buf.get_content_as_html()
+
     def get_content_as_text(self):
         buf = self.get_buffer()
         assert(buf is not None)

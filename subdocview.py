@@ -30,13 +30,17 @@ class SubdocView(Gtk.Container):
     @classmethod
     def toolbar_create(cls, toolbar, self):
         if cls.block_insert_btn is None:
-            cls.block_insert_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_NEW)
-            cls.block_insert_btn.show()
+            img = Gtk.Image.new_from_file("icons/block-add.svg")
+            cls.block_insert_btn = Gtk.ToolButton()
+            cls.block_insert_btn.set_icon_widget(img)
+            cls.block_insert_btn.show_all()
             toolbar.insert(cls.block_insert_btn, -1)
 
         if cls.block_remove_btn is None:
-            cls.block_remove_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_REMOVE)
-            cls.block_remove_btn.show()
+            img = Gtk.Image.new_from_file("icons/block-del.svg")
+            cls.block_remove_btn = Gtk.ToolButton()
+            cls.block_remove_btn.set_icon_widget(img)
+            cls.block_remove_btn.show_all()
             toolbar.insert(cls.block_remove_btn, -1)
 
         if cls.block_change_combo is None:

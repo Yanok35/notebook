@@ -208,8 +208,21 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
         end = buf.get_end_iter()
         return start.compare(end) == 0
 
+    def get_pages_required_for_rendering(self, w, h):
+        print('get_pages_required_for_rendering', w, h)
+        mini_w, natural = self.get_preferred_width()
+        mini_h, natural = self.get_preferred_height()
+        print(' widget needs :', mini_w, mini_h)
+        return 1
 
+    def draw_on_cairo_surface(self, ctx, x, y, w, h, part_number = 0):
+        mini_w, natural = self.get_preferred_width()
+        mini_h, natural = self.get_preferred_height()
 
+        ctx.save()
+        ctx.translate(x, y) # to match Gtk absolute coord
+        GtkSource.View.do_draw(self, ctx)
+        ctx.restore()
 
-
+        return mini_w, mini_h
 

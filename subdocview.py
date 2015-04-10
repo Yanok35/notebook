@@ -128,9 +128,12 @@ class SubdocView(Gtk.Container):
             child_alloc.y += child_alloc.height + b
 
     def do_draw(self, ctx):
-        ctx.save()
         rect = self.get_allocation()
-        ctx.translate(-rect.x, -rect.y) # to match Gtk absolute coord
+        self.draw_on_cairo_surface(ctx, rect.x, rect.y, rect.width, rect.height)
+
+    def draw_on_cairo_surface(self, ctx, x, y, width, height):
+        ctx.save()
+        ctx.translate(-x, -y) # to match Gtk absolute coord
 
         # Draw a background
         #ctx.set_source_rgb(1, 1, 1) # white
@@ -384,10 +387,23 @@ class SubdocView(Gtk.Container):
     def get_content_as_text(self):
         text = ''
         for i in range(0, self.nb_blocks):
-            text += self.childrens[i].get_content_as_text()
+            child = self.childrens[i]
+            text += child.get_content_as_text()
             if not text.endswith('\n'):
                 text += '\n'
             text += '\n'
         return text
+
+    def render_to_pdf(self, ctx, x, y):
+        glob_h = 0
+        for i in range(0, self.nb_blocks):
+            child = self.childrens[i]
+            #child.get_pages_required_for_rendering(2100, 2970)
+            w, h = child.draw_on_cairo_surface(ctx, x, y, 390, 60)
+
+            y += h
+            glob_h += h
+
+        return w, glob_h
 
 GObject.type_register(SubdocView)

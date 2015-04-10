@@ -2,6 +2,7 @@
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
+import cairo
 import sys, os
 
 from gi.repository import Gdk, Gio, Gtk, Pango
@@ -9,6 +10,11 @@ from gi.repository import Gdk, Gio, Gtk, Pango
 import glade_custom_catalog
 
 APP_TITLE = "Notebook"
+
+def _cm_to_pt(cm):
+    # 1 inch = 2.54 cm
+    # 1 point = 1/72th of an inch
+    return (cm / 2.54) * 72
 
 class NotebookApp(Gtk.Application):
 
@@ -30,6 +36,7 @@ class NotebookApp(Gtk.Application):
         self.projecttreeview.connect('subdoc-order-changed', self.on_subdoc_order_changed)
         self.projecttreeview.connect('subdoc-selection-changed', self.on_subdoc_selection_changed)
         self.projecttreeview.connect('project-export', self.on_project_export)
+        self.projecttreeview.connect('render-to-pdf', self.on_project_render_to_pdf)
 
         self.projview = self.builder.get_object("projectview1")
         #self.projview.add(GtkSource.View())
@@ -116,6 +123,22 @@ class NotebookApp(Gtk.Application):
             level = projecttreeview.get_docid_level(docid)
             text += self.projview.subdoc_get_content_as_text(docid, level)
         print text
+        pass
+
+    def on_project_render_to_pdf(self, projecttreeview):
+        print(_cm_to_pt(21), _cm_to_pt(29.7))
+        ims = cairo.PDFSurface("output.pdf", _cm_to_pt(21), _cm_to_pt(29.7))
+        ctx = cairo.Context(ims)
+        x = _cm_to_pt(1.5)
+        y = _cm_to_pt(1.5)
+
+        docids = projecttreeview.get_docid_list()
+        for docid in docids:
+            level = projecttreeview.get_docid_level(docid)
+            #print('level = ', level)
+            w, h = self.projview.subdoc_render_to_pdf(docid, level, ctx, x, y)
+            #print (w, h)
+            y += h
         pass
 
     def on_button_clicked(self, widget, tag):

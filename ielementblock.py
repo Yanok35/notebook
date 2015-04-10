@@ -14,6 +14,7 @@ class ElementBlockInterface(object):
         UP = 1
         DOWN = 2
 
+    # On screen UI and rendering
     def is_deletable(self):
         raise NotImplementedError
 
@@ -33,5 +34,15 @@ class ElementBlockInterface(object):
         raise NotImplementedError
 
     def set_element_serialized(self, data):
+        raise NotImplementedError
+
+    # On PDF rendering
+    def get_pages_required_for_rendering(self, w, h):
+        ''' given a width, height, the block element should return
+        number of call to draw_on_cairo_surface required if does not fit
+        in one page'''
+        raise NotImplementedError
+
+    def draw_on_cairo_surface(self, ctx, x, y, w, h, part_number = 0):
         raise NotImplementedError
 

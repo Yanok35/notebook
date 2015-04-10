@@ -350,4 +350,15 @@ class ProjectView(Gtk.Container):
         text += self.childrens[docid].get_content_as_text()
         return text
 
+    def subdoc_render_to_pdf(self, docid, level, ctx, x, y):
+        ctx.save()
+        ctx.translate(x, y)
+        Gtk.Label.do_draw(self.childrens_title[docid], ctx)
+        ctx.restore()
+        y += 50
+
+        w, h = self.childrens[docid].render_to_pdf(ctx, x, y)
+
+        return w, h + 50 + 30 # + size of Gtk.label... approx to 30
+
 GObject.type_register(ProjectView)

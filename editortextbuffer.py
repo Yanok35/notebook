@@ -93,12 +93,12 @@ class EditorTextBuffer(GtkSource.Buffer):
     def set_element_serialized(self, data):
         self._buf_internal_access(True)
 
-	# Reset buffer content
+        # Reset buffer content
         start_iter = self.get_start_iter()
         end_iter = self.get_end_iter()
         self.delete(start_iter, end_iter)
 
-	# Unserialize data
+        # Unserialize data
         serformat = self.register_deserialize_tagset()
         text = binascii.unhexlify(data)
         self.deserialize(self, serformat, start_iter, text)

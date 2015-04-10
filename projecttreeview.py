@@ -126,8 +126,8 @@ class ProjectTreeView(Gtk.Box):
             self.rec_treestore_set_docs(iter_elem, subdoc, filesdir)
 
     def load_from_file(self, filename):
-        print("user asked to load project from ", filename)
-        print(os.path.basename(filename))
+        #print("user asked to load project from ", filename)
+        #print(os.path.basename(filename))
         doc = etree.parse(filename)
 
         # todo: check file is in good format...
@@ -312,7 +312,7 @@ class ProjectTreeView(Gtk.Box):
 
             iter = self.treestore.iter_next(iter)
 
-        print(retlist)
+        #print(retlist)
         return retlist
 
     def get_docid_list(self):
@@ -461,7 +461,7 @@ class ProjectTreeView(Gtk.Box):
         return False
 
     def on_treeview_selection_changed(self, treesel):
-        print("selection changed")
+        #print("selection changed")
         treeview = treesel.get_tree_view()
         store, sel_list = treesel.get_selected_rows()
         if len(sel_list) == 0:
@@ -474,8 +474,8 @@ class ProjectTreeView(Gtk.Box):
         else:
             self.button_add_doc.set_sensitive(True)
 
-        for treepath in sel_list:
-            print (str(treepath))
+        #for treepath in sel_list:
+        #    print (str(treepath))
 
         # Reflect the selection on main app editor widget.
         ### self.editor_update_widget_visibility(sel_list)

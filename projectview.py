@@ -230,7 +230,7 @@ class ProjectView(Gtk.Container):
 
         widget.set_parent(self)
         if (str(type(widget)) == "<class 'gi.overrides.Gtk.Label'>"):
-            print('do_add', docid, widget)
+            #print('do_add', docid, widget)
             self.childrens_title[docid] = widget
         else:
             self.childrens[docid] = widget

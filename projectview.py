@@ -329,11 +329,24 @@ class ProjectView(Gtk.Container):
         self.queue_draw()
         #self.childrens[docid].set_title(title)
 
-    def subdoc_get_content_as_text(self, docid):
+    def subdoc_get_content_as_text(self, docid, level):
         assert(self.childrens[docid] is not None)
         assert(self.childrens_title[docid] is not None)
+        if level == 0:
+            c = '#'
+        elif level == 1:
+            c = '='
+        elif level == 2:
+            c = '^'
+        elif level == 3:
+            c = '-'
+        elif level == 4 or level == 5 or level == 6:
+            c = '~'
+        else:
+            raise NotImplementedError
+
         text = self.childrens_title[docid].get_text() + "\n"
-        text += ((len(text)-1) * "-") + "\n\n"
+        text += ((len(text)-1) * c) + "\n\n"
         text += self.childrens[docid].get_content_as_text()
         return text
 

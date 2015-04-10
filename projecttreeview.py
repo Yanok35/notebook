@@ -225,7 +225,7 @@ class ProjectTreeView(Gtk.Box):
         outfile = open(filename, 'w')
         doc.write(outfile, pretty_print=True)
 
-    def get_new_docid(self):
+    def _get_new_docid(self):
         self.subdocs_id += 1
         return self.subdocs_id
 
@@ -322,6 +322,34 @@ class ProjectTreeView(Gtk.Box):
             retlist.append(doc[0])
         return retlist
 
+
+    def rec_get_docid_level(self, iter, docid):
+
+        curid = int(self.treestore.get_value(iter, 1))
+        if curid == docid:
+            return self.treestore.iter_depth(iter)
+
+        level = -1
+        for i in range(0, self.treestore.iter_n_children(iter)):
+            child = self.treestore.iter_nth_child(iter, i)
+            level = self.rec_get_docid_level(child, docid)
+            if level != -1:
+                break
+
+        return level
+
+    def get_docid_level(self, docid):
+
+        level = -1
+        iter = self.treestore.get_iter_first()
+        while iter is not None and self.treestore.iter_is_valid(iter):
+            level = self.rec_get_docid_level(iter, docid)
+            if level != -1:
+                return level
+            iter = self.treestore.iter_next(iter)
+
+        return level
+
 ###    def get_editor_widget(self):
 ###        return self.subdocs_vbox
 
@@ -372,7 +400,7 @@ class ProjectTreeView(Gtk.Box):
         iter_new = self.treestore.insert(parent, row_pos+1)
 
         # Create a new subdocument
-        docid = self.get_new_docid()
+        docid = self._get_new_docid()
         ### editortextview = EditorTextView()
         ### #filename = editortextview.get_file_name(docid)
         ### filename = str(docid) + "-toto.txt"  # todo

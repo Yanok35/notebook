@@ -177,7 +177,8 @@ class NotebookApp(Gtk.Application):
         text = ""
         docids = projecttreeview.get_docid_list()
         for docid in docids:
-            text += self.projview.subdoc_get_content_as_text(docid)
+            level = projecttreeview.get_docid_level(docid)
+            text += self.projview.subdoc_get_content_as_text(docid, level)
         print text
         pass
 

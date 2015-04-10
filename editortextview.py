@@ -37,7 +37,7 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
 
         if cls.code_btn is None:
             cls.code_btn = Gtk.ToolButton()
-            img = Gtk.Image.new_from_file("code-inline-icon.svg")
+            img = Gtk.Image.new_from_file("icons/code-inline-icon.svg")
             cls.code_btn.set_icon_widget(img)
             toolbar.insert(cls.code_btn, -1)
 

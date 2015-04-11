@@ -63,7 +63,7 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
     def __init__(self, elements_toolbar, **args):
         GtkSource.View.__init__(self, **args)
 
-        self.set_size_request(600, -1)
+        self.set_size_request(400, -1)
 
         self.set_hexpand(True)
         #self.set_vexpand(True)

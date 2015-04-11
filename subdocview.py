@@ -410,4 +410,13 @@ class SubdocView(Gtk.Container):
 
         return w, glob_h
 
+    def export_to_html(self):
+        html = u'\n'
+        for i in range(0, self.nb_blocks):
+            html += u'<p>'
+            child = self.childrens[i]
+            html += child.get_content_as_html()
+            html += u'</p>'
+        return html
+
 GObject.type_register(SubdocView)

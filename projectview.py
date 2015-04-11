@@ -361,4 +361,13 @@ class ProjectView(Gtk.Container):
 
         return w, h + 50 + 30 # + size of Gtk.label... approx to 30
 
+    def subdoc_export_to_html(self, docid, level):
+        html = u'<h%d>' % (level+1)
+        html += self.childrens_title[docid].get_label()
+        html += u'</h%d>\n' % (level+1)
+
+        html += self.childrens[docid].export_to_html()
+
+        return html
+
 GObject.type_register(ProjectView)

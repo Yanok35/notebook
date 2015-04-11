@@ -37,6 +37,7 @@ class NotebookApp(Gtk.Application):
         self.projecttreeview.connect('subdoc-selection-changed', self.on_subdoc_selection_changed)
         self.projecttreeview.connect('project-export', self.on_project_export)
         self.projecttreeview.connect('render-to-pdf', self.on_project_render_to_pdf)
+        self.projecttreeview.connect('export-to-html', self.on_project_export_to_html)
 
         self.projview = self.builder.get_object("projectview1")
         #self.projview.add(GtkSource.View())
@@ -139,7 +140,16 @@ class NotebookApp(Gtk.Application):
             w, h = self.projview.subdoc_render_to_pdf(docid, level, ctx, x, y)
             #print (w, h)
             y += h
-        pass
+
+    def on_project_export_to_html(self, projecttreeview):
+        docids = projecttreeview.get_docid_list()
+        html = u'<html><body>\n'
+        for docid in docids:
+            level = projecttreeview.get_docid_level(docid)
+            html += self.projview.subdoc_export_to_html(docid, level)
+
+        html += u'</body></html>\n'
+        print(html)
 
     def on_button_clicked(self, widget, tag):
         self.editortextview.on_apply_tag(widget, tag)

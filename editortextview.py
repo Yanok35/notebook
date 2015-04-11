@@ -20,6 +20,8 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
     unde_btn = None
     code_btn = None
 
+    accel_grp = None
+
     # toolbar handling using class methods
     @classmethod
     def toolbar_create(cls, toolbar, self):
@@ -163,6 +165,19 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
         retval = GtkSource.View.do_key_press_event(self, event)
         #print ("   %s" % str(retval))
         return retval
+
+    def do_parent_set(self, oldparent):
+        toplevel = self.get_toplevel()
+        if EditorTextView.accel_grp is None and toplevel.is_toplevel():
+            EditorTextView.accel_grp = Gtk.AccelGroup()
+            toplevel.add_accel_group(EditorTextView.accel_grp)
+
+            key, mod = Gtk.accelerator_parse("<Control>b")
+            EditorTextView.bold_btn.add_accelerator('clicked', EditorTextView.accel_grp, key, mod, Gtk.AccelFlags.VISIBLE)
+            key, mod = Gtk.accelerator_parse("<Control>i")
+            EditorTextView.ital_btn.add_accelerator('clicked', EditorTextView.accel_grp, key, mod, Gtk.AccelFlags.VISIBLE)
+            key, mod = Gtk.accelerator_parse("<Control>u")
+            EditorTextView.unde_btn.add_accelerator('clicked', EditorTextView.accel_grp, key, mod, Gtk.AccelFlags.VISIBLE)
 
     def on_bold_button_clicked(self, btn):
         if self.is_focus():

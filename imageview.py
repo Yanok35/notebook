@@ -433,15 +433,16 @@ class ImageView(Gtk.Layout, ElementBlockInterface):
         if not self.model:
             self.model = ImageModel()
         propwin.set_model(self.model)
-        propwin.show()
+        if not propwin.is_visible():
+            propwin.show()
 
-        # Move window near the main window app
-        parent = self.get_parent_window().get_effective_parent()
-        _dont_care_, parent_x, parent_y = parent.get_origin()
-        parent_w = parent.get_width()
-        parent_h = parent.get_height()
+            # Move window near the main window app
+            parent = self.get_parent_window().get_effective_parent()
+            _dont_care_, parent_x, parent_y = parent.get_origin()
+            parent_w = parent.get_width()
+            parent_h = parent.get_height()
 
-        propwin.move(parent_x + parent_w, parent_y)
+            propwin.move(parent_x + parent_w, parent_y)
 
 GObject.type_register(ImageView)
 

@@ -8,6 +8,7 @@ from gi.repository import Gdk, Gtk, GtkSource, Pango
 
 from ielementblock import *
 from editortextbuffer import EditorTextBuffer
+from xrefwin import XRefWin
 
 class EditorTextView(GtkSource.View, ElementBlockInterface):
     __gtype_name__ = 'EditorTextView'
@@ -19,6 +20,7 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
     ital_btn = None
     unde_btn = None
     code_btn = None
+    xref_btn = None
 
     accel_grp = None
 
@@ -47,10 +49,20 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
             cls.code_btn.set_tooltip_text('Switch selected chars to verbatim mode')
             toolbar.insert(cls.code_btn, -1)
 
+        if cls.xref_btn is None:
+            #img = Gtk.Image.new_from_file("icons/block-del.svg")
+            #cls.xref_btn = Gtk.ToolButton()
+            #cls.xref_btn.set_icon_widget(img)
+            cls.xref_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_EXECUTE)
+            cls.xref_btn.set_tooltip_text('Add a cross-reference in block')
+            cls.xref_btn.show_all()
+            toolbar.insert(cls.xref_btn, -1)
+
         cls.bold_btn.connect('clicked', self.on_bold_button_clicked)
         cls.ital_btn.connect('clicked', self.on_italic_button_clicked)
         cls.unde_btn.connect('clicked', self.on_underline_button_clicked)
         cls.code_btn.connect('clicked', self.on_code_button_clicked)
+        cls.xref_btn.connect('clicked', self.on_xref_button_clicked)
 
     @classmethod
     def toobar_set_visible(cls, visible):
@@ -209,6 +221,24 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
         if self.is_focus():
             buf = self.get_buffer()
             buf.tag_toggle_on_selection_bound(buf.get_tag_code())
+
+    def on_xref_button_clicked(self, btn):
+        if self.is_focus():
+            print('on_xref_clicked')
+            w = XRefWin.get_instance()
+            #if not self.model:
+            #    self.model = ImageModel() ???
+            #w.set_model(self.model)
+            if not w.is_visible():
+                w.show_all()
+
+                # Move window near the main window app
+                parent = self.get_parent_window().get_effective_parent()
+                _dont_care_, parent_x, parent_y = parent.get_origin()
+                parent_w = parent.get_width()
+                parent_h = parent.get_height()
+
+                w.move(parent_x + parent_w, parent_y)
 
     def on_justify_toggled(self, widget, justification):
         self.textview.set_justification(justification)

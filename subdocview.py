@@ -33,6 +33,7 @@ class SubdocView(Gtk.Container):
             img = Gtk.Image.new_from_file("icons/block-add.svg")
             cls.block_insert_btn = Gtk.ToolButton()
             cls.block_insert_btn.set_icon_widget(img)
+            cls.block_insert_btn.set_tooltip_text('Add a new block')
             cls.block_insert_btn.show_all()
             toolbar.insert(cls.block_insert_btn, -1)
 
@@ -40,6 +41,7 @@ class SubdocView(Gtk.Container):
             img = Gtk.Image.new_from_file("icons/block-del.svg")
             cls.block_remove_btn = Gtk.ToolButton()
             cls.block_remove_btn.set_icon_widget(img)
+            cls.block_remove_btn.set_tooltip_text('Remove current block')
             cls.block_remove_btn.show_all()
             toolbar.insert(cls.block_remove_btn, -1)
 
@@ -50,6 +52,7 @@ class SubdocView(Gtk.Container):
             cls.block_change_combo = Gtk.ComboBox.new_with_model_and_entry(model)
             cls.block_change_combo.set_entry_text_column(1)
             cls.block_change_combo.set_active(0) # 1st row
+            cls.block_change_combo.set_tooltip_text('Change current block type')
 
             item = Gtk.ToolItem.new()
             item.add(cls.block_change_combo)

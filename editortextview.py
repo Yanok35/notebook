@@ -89,6 +89,10 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
 
         self.textview.show()
 
+        self.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
+        self.drag_dest_add_text_targets()
+        #self.connect("drag-data-received", self.on_drag_data_received)
+
         # img = Gtk.Image.new_from_file("oshw-logo-800-px.png")
         # vp = Gtk.Viewport()
         # vp.add(img)
@@ -98,6 +102,13 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
         # self.add(self.image)
 
         EditorTextView.toolbar_create(elements_toolbar, self)
+
+    def do_drag_data_received(self, context, x, y, selection_data, info, time_):
+    #def on_drag_data_received(self, context, x, y, selection_data, info, time_):
+        print('do_drag_data_received', context, x, y, info)
+        #if info == 0: #TARGET_ENTRY_TEXT:
+        text = selection_data.get_text()
+        print("DND Received text: %s" % text)
 
     def do_focus_in_event(self, event):
         EditorTextView.toobar_set_visible(True)

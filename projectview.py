@@ -230,7 +230,7 @@ class ProjectView(Gtk.Container):
 
         widget.set_parent(self)
         if (str(type(widget)) == "<class 'gi.overrides.Gtk.Label'>"):
-            print('do_add', docid, widget)
+            #print('do_add', docid, widget)
             self.childrens_title[docid] = widget
         else:
             self.childrens[docid] = widget
@@ -272,8 +272,9 @@ class ProjectView(Gtk.Container):
     def subdoc_new(self, docid):
         #print("subdoc_new:", docid)
         subdoc = SubdocView(self.elements_toolbar)
-        subdoc.subdoc_new()
-        subdoc.__setattr__("docid", docid)
+        #subdoc.subdoc_append()
+        subdoc.block_add_at_end()
+        subdoc.__setattr__("docid", docid) # TODO: move this into constructor
         self.add(subdoc)
 
         label_widget = Gtk.Label()
@@ -321,19 +322,63 @@ class ProjectView(Gtk.Container):
         assert(self.childrens[docid] is not None)
         self.childrens[docid].save_to_file(filename)
 
-    def subdoc_set_title(self, docid, title):
+    def subdoc_set_title(self, docid, title, level):
         assert(self.childrens_title[docid] is not None)
         #self.childrens_title[docid].set_text(title) # FIXME: use set markup...
+        if level == 0:
+            fontdesc = Pango.FontDescription("Serif Bold 16")
+        elif level == 1:
+            fontdesc = Pango.FontDescription("Serif 15")
+        elif level == 2:
+            fontdesc = Pango.FontDescription("Serif Italic 14")
+        elif level == 3:
+            fontdesc = Pango.FontDescription("Serif Bold 13")
+        elif level == 4 or level == 5 or level == 6:
+            fontdesc = Pango.FontDescription("Serif Bold 12")
+        self.childrens_title[docid].modify_font(fontdesc)
         self.childrens_title[docid].set_label(title) # FIXME: use set markup...
         self.queue_draw()
         #self.childrens[docid].set_title(title)
 
-    def subdoc_get_content_as_text(self, docid):
+    def subdoc_get_content_as_text(self, docid, level):
         assert(self.childrens[docid] is not None)
         assert(self.childrens_title[docid] is not None)
+        if level == 0:
+            c = '#'
+        elif level == 1:
+            c = '='
+        elif level == 2:
+            c = '^'
+        elif level == 3:
+            c = '-'
+        elif level == 4 or level == 5 or level == 6:
+            c = '~'
+        else:
+            raise NotImplementedError
+
         text = self.childrens_title[docid].get_text() + "\n"
-        text += ((len(text)-1) * "-") + "\n\n"
+        text += ((len(text)-1) * c) + "\n\n"
         text += self.childrens[docid].get_content_as_text()
         return text
+
+    def subdoc_render_to_pdf(self, docid, level, ctx, x, y):
+        ctx.save()
+        ctx.translate(x, y)
+        Gtk.Label.do_draw(self.childrens_title[docid], ctx)
+        ctx.restore()
+        y += 50
+
+        w, h = self.childrens[docid].render_to_pdf(ctx, x, y)
+
+        return w, h + 50 + 30 # + size of Gtk.label... approx to 30
+
+    def subdoc_export_to_html(self, docid, level):
+        html = u'<h%d>' % (level+1)
+        html += self.childrens_title[docid].get_label()
+        html += u'</h%d>\n' % (level+1)
+
+        html += self.childrens[docid].export_to_html()
+
+        return html
 
 GObject.type_register(ProjectView)

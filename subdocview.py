@@ -6,8 +6,11 @@ import cairo
 from gi.repository import Gdk, GObject, Gtk, Pango, PangoCairo
 from lxml import etree
 
+from ielementblock import ElementBlockInterface
 from editortextview import EditorTextView
 from editortextbuffer import EditorTextBuffer
+from imageview import ImageView
+from imagemodel import ImageModel
 
 class SubdocView(Gtk.Container):
     __gtype_name__ = 'SubdocView'
@@ -15,30 +18,55 @@ class SubdocView(Gtk.Container):
     PARAGRAPH = 1
     IMAGE = 2
 
-
     # 'Static' class members
-    subdoc_insert_btn = None
-    subdoc_remove_btn = None
+    block_insert_btn = None
+    block_remove_btn = None
+    block_change_combo = None
+    ignore_combo_signal = False
+
+    block_in_focus = None
 
     # toolbar handling using class methods
     @classmethod
     def toolbar_create(cls, toolbar, self):
-        if cls.subdoc_insert_btn is None:
-            cls.subdoc_insert_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_NEW)
-            cls.subdoc_insert_btn.show()
-            toolbar.insert(cls.subdoc_insert_btn, -1)
+        if cls.block_insert_btn is None:
+            img = Gtk.Image.new_from_file("icons/block-add.svg")
+            cls.block_insert_btn = Gtk.ToolButton()
+            cls.block_insert_btn.set_icon_widget(img)
+            cls.block_insert_btn.set_tooltip_text('Add a new block')
+            cls.block_insert_btn.show_all()
+            toolbar.insert(cls.block_insert_btn, -1)
 
-        if cls.subdoc_remove_btn is None:
-            cls.subdoc_remove_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_REMOVE)
-            cls.subdoc_remove_btn.show()
-            toolbar.insert(cls.subdoc_remove_btn, -1)
+        if cls.block_remove_btn is None:
+            img = Gtk.Image.new_from_file("icons/block-del.svg")
+            cls.block_remove_btn = Gtk.ToolButton()
+            cls.block_remove_btn.set_icon_widget(img)
+            cls.block_remove_btn.set_tooltip_text('Remove current block')
+            cls.block_remove_btn.show_all()
+            toolbar.insert(cls.block_remove_btn, -1)
+
+        if cls.block_change_combo is None:
+            model = Gtk.ListStore(GObject.TYPE_INT, GObject.TYPE_STRING)
+            model.append([SubdocView.PARAGRAPH, "Paragraph"])
+            model.append([SubdocView.IMAGE, "Image"])
+            cls.block_change_combo = Gtk.ComboBox.new_with_model_and_entry(model)
+            cls.block_change_combo.set_entry_text_column(1)
+            cls.block_change_combo.set_active(0) # 1st row
+            cls.block_change_combo.set_tooltip_text('Change current block type')
+
+            item = Gtk.ToolItem.new()
+            item.add(cls.block_change_combo)
+            item.show_all()
+            toolbar.insert(item, -1)
 
             sep = Gtk.SeparatorToolItem()
             sep.show()
             toolbar.insert(sep, -1)
 
-        cls.subdoc_insert_btn.connect('clicked', self.on_subdoc_insert_clicked)
-        cls.subdoc_remove_btn.connect('clicked', self.on_subdoc_remove_clicked)
+        cls.block_insert_btn.connect('clicked', self.on_block_insert_clicked)
+        cls.block_remove_btn.connect('clicked', self.on_block_remove_clicked)
+        self.sigid_block_combo_changed = \
+        cls.block_change_combo.connect('changed', self.on_combo_block_changed)
 
     def __init__(self, elements_toolbar):
         Gtk.Container.__init__(self)
@@ -47,12 +75,13 @@ class SubdocView(Gtk.Container):
 
         self.childrens = {} # list of block elements
         self.nb_blocks = 0
-        self.focused_child = None
+        self.cursor_idx = 0 # index of currently focused block element
 
         self.set_has_window(False)
         self.set_border_width(10) # for debug only
 
         self.elements_toolbar = elements_toolbar
+        assert(self.elements_toolbar is not None)
         SubdocView.toolbar_create(elements_toolbar, self)
 
     def do_get_request_mode(self):
@@ -105,27 +134,19 @@ class SubdocView(Gtk.Container):
             #    child_alloc.x, child_alloc.y, child_alloc.width, child_alloc.height)
             child_alloc.y += child_alloc.height + b
 
-        # TODO: optimize changing area... (keep track of previous allocs)
-        if self.get_window():
-            Gdk.Window.invalidate_rect(self.get_window(), allocation, True)
-            Gdk.Window.process_updates(self.get_window(), True)
-
     def do_draw(self, ctx):
-        ctx.save()
         rect = self.get_allocation()
-        ctx.translate(-rect.x, -rect.y) # to match Gtk absolute coord
+        self.draw_on_cairo_surface(ctx, rect.x, rect.y, rect.width, rect.height)
+
+    def draw_on_cairo_surface(self, ctx, x, y, width, height):
+        ctx.save()
+        ctx.translate(-x, -y) # to match Gtk absolute coord
 
         # Draw a background
         #ctx.set_source_rgb(1, 1, 1) # white
         ctx.set_source_rgb(0.9, 0.9, 0.9) # grey90
         ctx.paint()
         ctx.set_source_rgb(0, 0, 0) # black
-
-        # ctx.select_font_face("Sans", cairo.FONT_SLANT_NORMAL,
-        #     cairo.FONT_WEIGHT_NORMAL)
-        # ctx.set_font_size(12)
-        # ctx.move_to(10, 20)
-        # ctx.show_text("This is hello")
 
         # # Cross for layout debugging
         # ctx.set_line_width(1)
@@ -135,13 +156,13 @@ class SubdocView(Gtk.Container):
         # ctx.line_to(rect.x, rect.y + rect.height)
         # ctx.stroke()
 
-        # Blue rectangle to outline childrends (debug also)
+        # Blue rectangle to outline childrens (debug also)
         #ctx.save()
         for docid, child in self.childrens.items():
             if not child.get_visible():
                 continue
             rect = child.get_allocation()
-            if child == self.focused_child:
+            if child.is_focus():
                 ctx.set_line_width(4)
             else:
                 ctx.set_line_width(1)
@@ -151,32 +172,6 @@ class SubdocView(Gtk.Container):
             #print (rect.x, rect.y, rect.width, rect.height)
         #ctx.restore()
 
-        ## Horizontal line to outline subdoc title
-        #ctx.save()
-        #for docid, child in self.childrens_title.items():
-        #    if not child.get_visible():
-        #        continue
-        #    parent_rect = self.get_allocation()
-        #    rect = child.get_allocation()
-        #    ctx.set_line_width(2)
-        #    ctx.set_source_rgb(0, 0, 0) # black
-        #    ctx.move_to(rect.x, rect.y + rect.height)
-        #    ctx.line_to(rect.x + parent_rect.width, rect.y + rect.height)
-        #    ctx.stroke()
-        #    #print (rect.x, rect.y, rect.width, rect.height)
-        #ctx.restore()
-
-        #ctx.set_source_rgb(0, 0, 0) # black
-        #ctx.save()
-        #ctx.move_to(10, 50)
-        ##super(Gtk.Container, self).do_draw(self.image, ctx)
-        ##self.image.do_draw(self.image.get_parent_window(), ctx)
-        ##ctx.show_text("This is hello")
-        #self.image.draw(ctx)
-        #ctx.restore()
-
-        #self.queue_draw()
-        #ctx.show_text(self.txt_tst_buf)
         ctx.restore()
 
         Gtk.Container.do_draw(self, ctx)
@@ -187,107 +182,185 @@ class SubdocView(Gtk.Container):
         key = Gdk.keyval_name(event.keyval)
         if key == 'Return':
             print("todo: check block items focused, catch cursor and split if needed")
-            self.subdoc_new()
+            self.block_add_after_cursor()
             return True
+            ### w = self.block_add_at_end(block_type = SubdocView.IMAGE)
+            ### #w.load_image_from_file("oshw-logo-800-px.png")
+            ### w.load_image_from_file("Firefox_Old_Logo_small.png")
+            ### return True
         elif key =='BackSpace':
-            if self.focused_child and self.focused_child.is_deletable():
-                for key, widget in self.childrens.items():
-                    if widget == self.focused_child:
-                        if key > 0:
-                            self.remove(widget)
-                            self.focused_child = self.childrens[key-1]
-                            self.focused_child.grab_focus()
-                            self.queue_draw()
-                        else:
-                            self.remove(widget)
-                            self.subdoc_new()
+            if self.nb_blocks > 0 and self.cursor_idx != 0:
+                self.block_remove(self.cursor_idx)
 
-        retval = Gtk.Container.do_key_press_event(self, event)
-        print ("   %s" % str(retval))
-        return retval
+        return Gtk.Container.do_key_press_event(self, event)
 
     # Gtk.Container methods override
     def do_child_type(self):
-        return Gtk.Widget # ProjectView ?
+        return ElementBlockInterface
 
     def do_add(self, widget):
         widget.set_parent(self)
-        idx = self.nb_blocks
-        self.childrens[idx] = widget
-        widget.grab_focus()
-        self.focused_child = widget
-        self.nb_blocks += 1
-
-        if widget.get_visible():
-            self.queue_resize()
 
     def do_remove(self, widget):
         for key, val in self.childrens.items():
             if val == widget:
-
-                if widget == self.focused_child:
-                    self.focused_child = None
-
-                del self.childrens[key]
-
-                # Shift all childs indexes
-                if key < self.nb_blocks - 1:
-                    for i in range(key, self.nb_blocks - 1):
-                        self.childrens[i] = self.childrens[i+1]
-                self.nb_blocks -= 1
-
-                if widget.get_visible():
-                    self.queue_resize()
-
-                return
+                widget.unparent()
+                self.queue_resize()
 
     def do_forall(self, include_int, callback):
         try:
             for docid, widget in self.childrens.items():
                 callback(widget)
-                #if ch.eventbox:
-                #    callback (ch.eventbox)
-                #else:
-                #    callback (ch.widget)
         except AttributeError:
             pass # print 'AttribError'
 
     # Signals (mostly from childs)
     def on_child_focus_in(self, widget, event):
-        #print(event)
-        self.focused_child = widget
-        self.queue_draw()
+        #print('on_child_focus_in', widget, event)
 
-    def on_subdoc_insert_clicked(self, btn):
-        if self.is_focus():
-            print('on_subdoc_insert_clicked')
-            print(self)
+        # Class variable to store this reference
+        SubdocView.block_in_focus = widget
 
-    def on_subdoc_remove_clicked(self, btn):
-        if self.is_focus():
-            print('on_subdoc_remove_clicked')
-            print(self)
+        # Update combo block to match the subclass
+        SubdocView.ignore_combo_signal = True
+        clsname = widget.__class__.__name__
+        if clsname == 'EditorTextView':
+            SubdocView.block_change_combo.set_active(0)
+        elif clsname == 'ImageView':
+            SubdocView.block_change_combo.set_active(1)
+        else:
+            raise AttributeError
+        SubdocView.ignore_combo_signal = False
+
+        # Find widget in list and put cursor_idx up to date
+        for key, child in self.childrens.items():
+            if child == widget:
+                self.cursor_idx = key
+
+        # We should redraw the projectview widget. parent of subdocview
+        # TODO: find another way to propagate this ?
+        self.get_parent().queue_draw()
+
+    def on_child_cursor_move(self, widget, direction):
+        #print('on_child_cursor_move', widget, direction)
+        #print('   idx = %d in list : ' % self.cursor_idx, self.childrens.items())
+        prev_index = self.cursor_idx
+        if direction == ElementBlockInterface.CursorDirection.UP:
+            if self.cursor_idx > 0:
+                self.cursor_idx -= 1
+        elif direction == ElementBlockInterface.CursorDirection.DOWN:
+            if self.nb_blocks and self.cursor_idx < self.nb_blocks - 1:
+                self.cursor_idx += 1
+
+        if self.cursor_idx != prev_index:
+            self.childrens[self.cursor_idx].grab_focus()
+            self.get_parent().queue_draw()
+
+    def on_block_insert_clicked(self, btn):
+        if self.get_focus_child():
+            #print('insert_at %d', self.cursor_idx)
+            self.block_add_at_index(self.cursor_idx)
+
+    def on_block_remove_clicked(self, btn):
+        if self.get_focus_child():
+            #print('on_block_remove_clicked')
+            #if self.childrens[self.cursor_idx].is_focus():
+            if self.nb_blocks > 0 and self.cursor_idx != 0:
+                self.block_remove(self.cursor_idx)
+
+    def on_combo_block_changed(self, combo):
+        #print("combo is now", combo.get_active())
+        if not SubdocView.ignore_combo_signal:
+            child = SubdocView.block_in_focus
+            if child and child.get_parent() == self:
+                for blockid, widget in self.childrens.items():
+                    if widget == child:
+                        #print('will add/remove/add')
+                        if combo.get_active() == SubdocView.PARAGRAPH - 1:
+                            self.block_add_at_index(blockid, block_type = SubdocView.PARAGRAPH)
+                        elif combo.get_active() == SubdocView.IMAGE - 1:
+                            self.block_add_at_index(blockid, block_type = SubdocView.IMAGE)
+                        self.block_remove(blockid+1)
 
     # Application accessors
-    def subdoc_new(self, subdoc_type = PARAGRAPH):
-        #print("subdoc_new:")
-        if subdoc_type == SubdocView.PARAGRAPH:
+    def _block_new(self, block_type = PARAGRAPH):
+        #print("_block_new:")
+        if block_type == SubdocView.PARAGRAPH:
             buf = EditorTextBuffer()
             widget = EditorTextView(self.elements_toolbar)
             widget.set_buffer(buf)
             self.add(widget)
-        elif subdoc_type == SubdocView.IMAGE:
-            print("Image insertion asked")
+        elif block_type == SubdocView.IMAGE:
+            #print("Image insertion asked")
+            widget = ImageView()
+            self.add(widget)
+            model = ImageModel()
+            widget.set_model(model)
         else:
-            raise AttributeError
+            raise NotImplementedError
 
         widget.connect("focus-in-event", self.on_child_focus_in)
+        widget.connect("cursor-move", self.on_child_cursor_move)
+
+        #self.add(widget)
+
+        return widget
+
+    def block_add_at_end(self, **args):
+        return self.block_add_at_index(self.nb_blocks, **args)
+
+    def block_add_at_index(self, index, **args):
+        assert(index >= 0 and index <= self.nb_blocks)
+
+        # chain element at 'index' pos in childrens list.
+        for i in list(reversed(range(index, self.nb_blocks))):
+            self.childrens[i+1] = self.childrens[i]
+
+        block = self._block_new(**args)
+        self.childrens[index] = block
+        self.nb_blocks += 1
+
+        # self.cursor_idx will be updated in signal "focus-in-event"
+        block.grab_focus()
+        self.queue_resize()
+
+        return block
+
+    def block_add_after_cursor(self, **args):
+        return self.block_add_at_index(self.cursor_idx + 1, **args)
+
+    def block_remove(self, index):
+        assert(index >= 0 and index <= self.nb_blocks)
+
+        self.remove(self.childrens[index])
+        del self.childrens[index]
+
+        #from IPython import embed
+        #embed()
+
+        # move elements after 'index', *up* in the childrens list.
+        shift_occured = False
+        for i in range(index, self.nb_blocks - 1):
+            self.childrens[i] = self.childrens[i+1]
+            shift_occured = True
+
+        if shift_occured:
+            del self.childrens[self.nb_blocks - 1]
+        self.nb_blocks -= 1
+
+        if self.cursor_idx >= index and self.cursor_idx > 0:
+            self.cursor_idx -= 1
+            self.childrens[self.cursor_idx].grab_focus()
+
+        self.queue_resize()
+
+    def block_remove_all(self):
+        while self.nb_blocks:
+            self.block_remove(self.nb_blocks - 1)
 
     def load_from_file(self, filename):
 
-        # Remove previous widgets (should be done elsewhere !)
-        while self.nb_blocks != 0:
-            self.remove(self.childrens[self.nb_blocks-1])
+        self.block_remove_all()
 
         with open(filename, 'r') as f:
             data = f.read()
@@ -297,12 +370,13 @@ class SubdocView(Gtk.Container):
             subdoc = etree.fromstring(data)
             assert(subdoc.tag == 'subdoc')
 
-            para_list = subdoc.findall('p')
-            for para in para_list:
-                self.subdoc_new(subdoc_type = SubdocView.PARAGRAPH)
-                sub = self.childrens[self.nb_blocks-1]
-                assert (sub is not None)
-                sub.set_content_from_html(para.text)
+            for child in subdoc:
+                if child.tag == 'p':
+                    widget = self.block_add_at_end(block_type = SubdocView.PARAGRAPH)
+                elif child.tag == 'img':
+                    widget = self.block_add_at_end(block_type = SubdocView.IMAGE)
+
+                widget.set_element_serialized(child.text)
 
     def save_to_file(self, filename):
         subdoc = etree.Element('subdoc')
@@ -310,12 +384,42 @@ class SubdocView(Gtk.Container):
         for docid, child in self.childrens.items():
             tag_name = child.get_serialize_tag_name()
             childnode = etree.SubElement(subdoc, tag_name)
-            childnode.text = child.get_content_as_html()
+            try:
+                childnode.text = child.get_element_serialized()
+            except NotImplementedError:
+                print ('*** Warning: Element ' + str(child) + ' does not support serialize')
         with open(filename, 'w') as f:
             tree.write(f, pretty_print=True)
 
     def get_content_as_text(self):
-        assert(self.childrens[0] is not None)
-        return self.childrens[0].get_content_as_text()
+        text = ''
+        for i in range(0, self.nb_blocks):
+            child = self.childrens[i]
+            text += child.get_content_as_text()
+            if not text.endswith('\n'):
+                text += '\n'
+            text += '\n'
+        return text
+
+    def render_to_pdf(self, ctx, x, y):
+        glob_h = 0
+        for i in range(0, self.nb_blocks):
+            child = self.childrens[i]
+            #child.get_pages_required_for_rendering(2100, 2970)
+            w, h = child.draw_on_cairo_surface(ctx, x, y, 390, 60)
+
+            y += h
+            glob_h += h
+
+        return w, glob_h
+
+    def export_to_html(self):
+        html = u'\n'
+        for i in range(0, self.nb_blocks):
+            html += u'<p>'
+            child = self.childrens[i]
+            html += child.get_content_as_html()
+            html += u'</p>'
+        return html
 
 GObject.type_register(SubdocView)

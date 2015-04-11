@@ -48,4 +48,6 @@ TODO list / bugfixes:
 [x] sauvegarder la sélection dans le projet
 [x] sélectionner un subdoc déplacé, une fois arrivé à sa destination
 [ ] projectview classe dérivée de treemodel en lieu et place des appels subdoc_*
+[ ] subdocview : sauvegarder la position de l'ascenceur + du blockelem qui a le
+    focus.
 

@@ -33,6 +33,8 @@ class ProjectTreeView(Gtk.Box):
         str('subdoc-selection-changed'): (GObject.SIGNAL_RUN_FIRST, None, ()),
 
         str('project-export'): (GObject.SIGNAL_RUN_FIRST, None, ()),
+        str('render-to-pdf'): (GObject.SIGNAL_RUN_FIRST, None, ()),
+        str('export-to-html'): (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
     def __init__(self):
@@ -80,10 +82,18 @@ class ProjectTreeView(Gtk.Box):
         self.button_del_doc.connect("clicked", self.on_button_del_doc_clicked)
         self.button_export_doc = Gtk.ToolButton.new_from_stock(Gtk.STOCK_EXECUTE)
         self.button_export_doc.connect("clicked", self.on_button_export_doc_clicked)
-        toolbar.insert(self.button_add_doc, 0)
-        toolbar.insert(self.button_del_doc, 1)
-        toolbar.insert(Gtk.SeparatorToolItem(), 2)
-        toolbar.insert(self.button_export_doc, 3)
+        self.button_render_to_pdf = Gtk.ToolButton.new_from_stock(Gtk.STOCK_PAGE_SETUP)
+        self.button_render_to_pdf.connect("clicked", self.on_button_render_to_pdf_clicked)
+        img = Gtk.Image.new_from_file("icons/export-html.svg")
+        self.button_export_to_html = Gtk.ToolButton()
+        self.button_export_to_html.set_icon_widget(img)
+        self.button_export_to_html.connect("clicked", self.on_button_export_to_html_clicked)
+        toolbar.insert(self.button_add_doc, -1)
+        toolbar.insert(self.button_del_doc, -1)
+        toolbar.insert(Gtk.SeparatorToolItem(), -1)
+        #toolbar.insert(self.button_export_doc, -1)
+        toolbar.insert(self.button_render_to_pdf, -1)
+        toolbar.insert(self.button_export_to_html, -1)
         self.pack_start(toolbar, False, False, 0)
 
         self.scrolledwindow = Gtk.ScrolledWindow()
@@ -126,8 +136,8 @@ class ProjectTreeView(Gtk.Box):
             self.rec_treestore_set_docs(iter_elem, subdoc, filesdir)
 
     def load_from_file(self, filename):
-        print("user asked to load project from ", filename)
-        print(os.path.basename(filename))
+        #print("user asked to load project from ", filename)
+        #print(os.path.basename(filename))
         doc = etree.parse(filename)
 
         # todo: check file is in good format...
@@ -225,7 +235,7 @@ class ProjectTreeView(Gtk.Box):
         outfile = open(filename, 'w')
         doc.write(outfile, pretty_print=True)
 
-    def get_new_docid(self):
+    def _get_new_docid(self):
         self.subdocs_id += 1
         return self.subdocs_id
 
@@ -312,7 +322,7 @@ class ProjectTreeView(Gtk.Box):
 
             iter = self.treestore.iter_next(iter)
 
-        print(retlist)
+        #print(retlist)
         return retlist
 
     def get_docid_list(self):
@@ -321,6 +331,34 @@ class ProjectTreeView(Gtk.Box):
         for doc in doclist:
             retlist.append(doc[0])
         return retlist
+
+
+    def rec_get_docid_level(self, iter, docid):
+
+        curid = int(self.treestore.get_value(iter, 1))
+        if curid == docid:
+            return self.treestore.iter_depth(iter)
+
+        level = -1
+        for i in range(0, self.treestore.iter_n_children(iter)):
+            child = self.treestore.iter_nth_child(iter, i)
+            level = self.rec_get_docid_level(child, docid)
+            if level != -1:
+                break
+
+        return level
+
+    def get_docid_level(self, docid):
+
+        level = -1
+        iter = self.treestore.get_iter_first()
+        while iter is not None and self.treestore.iter_is_valid(iter):
+            level = self.rec_get_docid_level(iter, docid)
+            if level != -1:
+                return level
+            iter = self.treestore.iter_next(iter)
+
+        return level
 
 ###    def get_editor_widget(self):
 ###        return self.subdocs_vbox
@@ -372,7 +410,7 @@ class ProjectTreeView(Gtk.Box):
         iter_new = self.treestore.insert(parent, row_pos+1)
 
         # Create a new subdocument
-        docid = self.get_new_docid()
+        docid = self._get_new_docid()
         ### editortextview = EditorTextView()
         ### #filename = editortextview.get_file_name(docid)
         ### filename = str(docid) + "-toto.txt"  # todo
@@ -411,6 +449,12 @@ class ProjectTreeView(Gtk.Box):
     def on_button_export_doc_clicked(self, widget):
         self.emit('project-export')
 
+    def on_button_render_to_pdf_clicked(self, widget):
+        self.emit('render-to-pdf')
+
+    def on_button_export_to_html_clicked(self, widget):
+        self.emit('export-to-html')
+
     def on_treemodel_row_inserted(self, treemodel, path, iter):
         print ("row-inserted", str(path), iter)
 
@@ -433,7 +477,7 @@ class ProjectTreeView(Gtk.Box):
         return False
 
     def on_treeview_selection_changed(self, treesel):
-        print("selection changed")
+        #print("selection changed")
         treeview = treesel.get_tree_view()
         store, sel_list = treesel.get_selected_rows()
         if len(sel_list) == 0:
@@ -446,8 +490,8 @@ class ProjectTreeView(Gtk.Box):
         else:
             self.button_add_doc.set_sensitive(True)
 
-        for treepath in sel_list:
-            print (str(treepath))
+        #for treepath in sel_list:
+        #    print (str(treepath))
 
         # Reflect the selection on main app editor widget.
         ### self.editor_update_widget_visibility(sel_list)

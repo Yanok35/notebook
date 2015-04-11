@@ -322,9 +322,20 @@ class ProjectView(Gtk.Container):
         assert(self.childrens[docid] is not None)
         self.childrens[docid].save_to_file(filename)
 
-    def subdoc_set_title(self, docid, title):
+    def subdoc_set_title(self, docid, title, level):
         assert(self.childrens_title[docid] is not None)
         #self.childrens_title[docid].set_text(title) # FIXME: use set markup...
+        if level == 0:
+            fontdesc = Pango.FontDescription("Serif Bold 16")
+        elif level == 1:
+            fontdesc = Pango.FontDescription("Serif 15")
+        elif level == 2:
+            fontdesc = Pango.FontDescription("Serif Italic 14")
+        elif level == 3:
+            fontdesc = Pango.FontDescription("Serif Bold 13")
+        elif level == 4 or level == 5 or level == 6:
+            fontdesc = Pango.FontDescription("Serif Bold 12")
+        self.childrens_title[docid].modify_font(fontdesc)
         self.childrens_title[docid].set_label(title) # FIXME: use set markup...
         self.queue_draw()
         #self.childrens[docid].set_title(title)

@@ -81,7 +81,8 @@ class NotebookApp(Gtk.Application):
             curid = doc[0]
             curtitle = doc[1]
             if (not docid) or (docid and docid == curid):
-                self.projview.subdoc_set_title(curid, curtitle)
+                level = self.projecttreeview.get_docid_level(docid)
+                self.projview.subdoc_set_title(curid, curtitle, level)
 
     def on_subdoc_inserted(self, projecttreeview, docid):
         #print('*** on_subdoc_inserted signal received, docid = ' + str(docid))

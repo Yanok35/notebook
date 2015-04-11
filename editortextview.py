@@ -25,20 +25,24 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
     def toolbar_create(cls, toolbar, self):
         if cls.bold_btn is None:
             cls.bold_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_BOLD)
+            cls.bold_btn.set_tooltip_text('Set selection to bold')
             toolbar.insert(cls.bold_btn, -1)
 
         if cls.ital_btn is None:
             cls.ital_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_ITALIC)
+            cls.ital_btn.set_tooltip_text('Set selection to italic')
             toolbar.insert(cls.ital_btn, -1)
 
         if cls.unde_btn is None:
             cls.unde_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_UNDERLINE)
+            cls.unde_btn.set_tooltip_text('Underline selected chars')
             toolbar.insert(cls.unde_btn, -1)
 
         if cls.code_btn is None:
             cls.code_btn = Gtk.ToolButton()
             img = Gtk.Image.new_from_file("icons/code-inline-icon.svg")
             cls.code_btn.set_icon_widget(img)
+            cls.code_btn.set_tooltip_text('Switch selected chars to verbatim mode')
             toolbar.insert(cls.code_btn, -1)
 
         cls.bold_btn.connect('clicked', self.on_bold_button_clicked)

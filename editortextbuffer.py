@@ -16,6 +16,7 @@ class EditorTextBuffer(GtkSource.Buffer):
     def __init__(self):
         GtkSource.Buffer.__init__(self)
 
+        self.set_highlight_matching_brackets(False)
         self.buf_internal_access = False
 
         self.html_tag_translation = {}

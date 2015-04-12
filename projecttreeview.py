@@ -102,11 +102,6 @@ class ProjectTreeView(Gtk.Box):
         self.show_all()
 
         self.subdocs_id = 0
-        ### self.subdocs_refs = {}
-        ### self.subdocs_vbox = Gtk.VBox()
-        ### self.subdocs_empty_project = Gtk.Image.new_from_stock(Gtk.STOCK_DND, 64)
-        ### self.subdocs_empty_project.set_size_request(600, -1)
-        ### self.subdocs_vbox.pack_start(self.subdocs_empty_project, True, True, 0)
 
     def rec_treestore_set_docs(self, iter, elem, filesdir):
 
@@ -123,12 +118,6 @@ class ProjectTreeView(Gtk.Box):
         filename = os.path.join(filesdir, str(docid) + ".subdoc")
         self.emit('subdoc-inserted', docid)
         self.emit('subdoc-load-from-file', docid, str(filename))
-
-        ### editortextview = EditorTextView()
-        ### editortextview.load_from_file(filename)
-        ### self.subdocs_refs[docid] = (editortextview, filename)
-        ### # Add widget to global VBox
-        ### self.subdocs_vbox.pack_start(editortextview, True, True, 3)
 
         # Parse node's child if they exists
         subdoc_list = elem.findall('subdoc')
@@ -155,7 +144,6 @@ class ProjectTreeView(Gtk.Box):
         self.treestore.clear()
         # Remove subdoc refs
         self.subdocs_id = 0
-        ### self.subdocs_refs = {}
 
         # Parse XML file to add node recursively
         doctree = doc.find('doctree')
@@ -195,8 +183,6 @@ class ProjectTreeView(Gtk.Box):
         # Catch content of subdoc[docid] and save to file
         filename = os.path.join(filesdir, str(docid)+".subdoc")
         print("doc id ", docid, " save to ", filename)
-        ### (editortextview, _dont_care_) = self.subdocs_refs[int(docid)]
-        ### editortextview.save_to_file(filename)
         self.emit('subdoc-save-to-file', int(docid), str(filename))
 
         for i in range(0, self.treestore.iter_n_children(iter)):
@@ -360,33 +346,6 @@ class ProjectTreeView(Gtk.Box):
 
         return level
 
-###    def get_editor_widget(self):
-###        return self.subdocs_vbox
-
-###    def editor_update_widget_visibility(self, sel_list):
-###        print("propagate", len(self.subdocs_refs.items()))
-###
-###        # fixme : remove and check widget are destroyed...
-###        self.subdocs_vbox.show_all()
-###        ### for (editortextview, filename) in self.subdocs_refs.values():
-###        ###     editortextview.hide()
-###
-###        if len(self.subdocs_refs.items()) == 0:
-###            self.subdocs_empty_project.show()
-###        else:
-###            self.subdocs_empty_project.hide()
-###
-###            for spath in sel_list:
-###                print (str(spath))
-###                path = Gtk.TreePath(spath)
-###                iter = self.treestore.get_iter(path)
-###                docid = self.treestore.get_value(iter, 1)
-###                print(docid)
-###                ### (editortextview, filename) = self.subdocs_refs[docid]
-###                ### editortextview.show()
-###            # todo: refresh visible vbox...
-###            #self.app.set_editor_widget(self.subdocs_vbox)
-
     def on_button_add_doc_clicked(self, widget):
         treesel = self.treeview.get_selection()
         store, sel_list = treesel.get_selected_rows()
@@ -411,20 +370,12 @@ class ProjectTreeView(Gtk.Box):
 
         # Create a new subdocument
         docid = self._get_new_docid()
-        ### editortextview = EditorTextView()
-        ### #filename = editortextview.get_file_name(docid)
-        ### filename = str(docid) + "-toto.txt"  # todo
-        ### self.subdocs_refs[docid] = (editortextview, filename)
 
         # Add an entry in project's treeview
         self.treestore.set_value(iter_new, 0, "<Write your title>")
         self.treestore.set_value(iter_new, 1, docid)
         self.emit('subdoc-inserted', docid)
         #self.emit('subdoc-changed', docid)
-
-        # Add widget to global VBox
-        ### self.subdocs_vbox.pack_start(editortextview, True, True, 3)
-        
 
     def on_button_del_doc_clicked(self, widget):
         treesel = self.treeview.get_selection()
@@ -442,9 +393,6 @@ class ProjectTreeView(Gtk.Box):
             #self.emit('subdoc-changed', docid)
             # warning: after remove is called, all path in sel_list
             # are not valid anymore... to fixup
-
-            ### # remove entry in dictionary
-            ### del self.subdocs_refs[docid]
 
     def on_button_export_doc_clicked(self, widget):
         self.emit('project-export')
@@ -494,7 +442,6 @@ class ProjectTreeView(Gtk.Box):
         #    print (str(treepath))
 
         # Reflect the selection on main app editor widget.
-        ### self.editor_update_widget_visibility(sel_list)
         if self.current_sel_list != sel_list:
             self.current_sel_list = sel_list
             self.emit('subdoc-selection-changed')

@@ -68,7 +68,7 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
     def toobar_set_visible(cls, visible):
         for w in [ cls.bold_btn, cls.ital_btn, cls.unde_btn, cls.code_btn ]:
             if visible:
-                w.show()
+                w.show_all()
             else:
                 w.hide()
 

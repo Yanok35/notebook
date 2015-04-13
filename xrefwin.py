@@ -9,7 +9,6 @@ from gi.repository import Gdk, GObject, Gtk
 #from gi.repository import Gdk, GdkPixbuf, GObject, Gtk, GtkSource, Pango
 
 #from ielementblock import ElementBlockInterface
-from imagemodel import ImageModel
 
 class XRefWin(Gtk.Window):
     __gtype_name__ = 'XRefWin'
@@ -31,7 +30,7 @@ class XRefWin(Gtk.Window):
         self.treeview = self.builder.get_object('treeview_subdocs')
         self.treeview.expand_all()
 
-        column_title = ['Document name', 'DocID']
+        column_title = ['Document name' ] #, 'DocID']
         for i in range(0, len(column_title)):
             renderer = Gtk.CellRendererText()
             #if i == 0:
@@ -47,7 +46,6 @@ class XRefWin(Gtk.Window):
         label_preview.override_background_color(Gtk.StateFlags.NORMAL,
                                                 Gdk.RGBA(1, 1, 1, 1))
 
-        #label_preview.drag_source_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
         label_preview.drag_source_set(Gdk.ModifierType.BUTTON1_MASK, [], Gdk.DragAction.COPY)
         #label_preview.drag_source_add_text_targets()
 
@@ -60,7 +58,7 @@ class XRefWin(Gtk.Window):
         #label_preview.connect('drag-begin', self.on_label_preview_drag_begin)
         label_preview.connect('drag-data-get', self.on_label_preview_drag_data_get)
 
-        self.model = None
+        self.textmodel = None
         self._sensitive_update_all()
 
         self.xref = u''
@@ -96,14 +94,12 @@ class XRefWin(Gtk.Window):
         w = self.builder.get_object('button_close')
         w.set_sensitive(True)
 
-        if self.model:
-            pass
+        #if self.model:
+        #    pass
 
     # Public methods
-    def get_model(self):
-        return self.model
 
-    def set_model(self, model):
+    def set_treemodel(self, model):
         #b = self.builder
         self.treeview.set_model(model)
         self.treeview.expand_all()
@@ -131,6 +127,9 @@ class XRefWin(Gtk.Window):
         #    self.model = model
 
         self._sensitive_update_all()
+
+    def set_textmodel(self, model):
+        self.textmodel = model
 
     ## Model callbacks
     #def on_model_move(self, model, x, y):
@@ -173,10 +172,9 @@ class XRefWin(Gtk.Window):
         label_preview.set_markup("<a href='" + entry_link_url.get_text() + "'>" + entry.get_text() + "</a>")
 
         # ... and to self.xref
-        # FIXME: remove this ugly hack.
-        data = u'l|' + binascii.hexlify(entry.get_text()) + \
-               u'|'  + binascii.hexlify(entry_link_url.get_text())
-        self.xref = data
+        tag = self.textmodel.create_url_tag(entry.get_text(),
+                                            entry_link_url.get_text())
+        self.xref = tag.tostring()
 
     # Preview 'label' callbacks
 

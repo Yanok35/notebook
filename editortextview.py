@@ -2,12 +2,13 @@
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
+import binascii
 import copy
 
 from gi.repository import Gdk, Gtk, GtkSource, Pango
 
 from ielementblock import *
-from editortextbuffer import EditorTextBuffer
+from editortextbuffer import AttribTextTag, EditorTextBuffer
 from xrefwin import XRefWin
 
 class EditorTextView(GtkSource.View, ElementBlockInterface):
@@ -100,7 +101,14 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
         self.textview.show()
 
         self.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
-        self.drag_dest_add_text_targets()
+        #self.drag_dest_add_text_targets()
+
+        targets = Gtk.TargetList.new([])
+        targets.add_text_targets(0) # common for major apps...
+        #targets.add_uri_targets(1)
+        targets.add_text_targets(1)
+        self.drag_dest_set_target_list(targets)
+        self.drag_data_received__last_timestamp = None
         #self.connect("drag-data-received", self.on_drag_data_received)
 
         # img = Gtk.Image.new_from_file("oshw-logo-800-px.png")
@@ -115,11 +123,27 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
         self.notebook_app = notebook_app
 
     def do_drag_data_received(self, context, x, y, selection_data, info, time_):
-    #def on_drag_data_received(self, context, x, y, selection_data, info, time_):
-        print('do_drag_data_received', context, x, y, info)
-        #if info == 0: #TARGET_ENTRY_TEXT:
-        text = selection_data.get_text()
-        print("DND Received text: %s" % text)
+        # Here we need some "debounce" since for unknown reason this callback is
+        # called twice (with same timestamp)
+        if self.drag_data_received__last_timestamp and self.drag_data_received__last_timestamp == time_:
+            return True
+        else:
+            self.drag_data_received__last_timestamp = time_
+
+        print('do_drag_data_received', context, x, y, info, time_)
+        if info == 0: #TARGET_ENTRY_TEXT:
+            text = selection_data.get_text()
+            print("DND Received text: %s" % text)
+        elif info == 1: # proprio format with serialized xref or link
+            data = selection_data.get_text()
+            if data:
+                buf = self.get_buffer()
+                mark = buf.get_mark('insert')
+                cur_iter = buf.get_iter_at_mark(mark)
+
+                tag = AttribTextTag.fromstring(data)
+                text = tag.get_attribute('text')
+                buf.insert_attribtag_at_iter(cur_iter, text, tag)
 
     def do_focus_in_event(self, event):
         EditorTextView.toobar_set_visible(True)
@@ -158,6 +182,9 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
                 print("Backspace! delete itself (if empty) and change block - 1, last_pos")
                 print("or merge with block - 1, if previous is text")
                 return False
+        elif key in ('BackSpace', 'Delete') and buf.get_property('has-selection'):
+            buf.remove_text_from_selection()
+            return True
         elif key in ('Up', 'Down', 'Left', 'Right'):
             #print("cur_iter (av move!) l %d : c %d" % (cur_iter.get_line(), cur_iter.get_line_index()))
             #print("  visible: l %d : c %d" % (cur_iter.get_line(), cur_iter.get_visible_line_index()))
@@ -225,8 +252,9 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
         if self.is_focus():
             print('on_xref_clicked')
             w = XRefWin.get_instance()
+            w.set_textmodel(self.get_buffer())
             model = self.notebook_app.get_project_treemodel()
-            w.set_model(model)
+            w.set_treemodel(model)
             #if not self.model:
             #    self.model = ImageModel() ???
             #w.set_model(self.model)

@@ -72,7 +72,7 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
             else:
                 w.hide()
 
-    def __init__(self, elements_toolbar, **args):
+    def __init__(self, elements_toolbar, notebook_app, **args):
         GtkSource.View.__init__(self, **args)
 
         self.set_size_request(400, -1)
@@ -114,6 +114,7 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
         # self.add(self.image)
 
         EditorTextView.toolbar_create(elements_toolbar, self)
+        self.notebook_app = notebook_app
 
     def do_drag_data_received(self, context, x, y, selection_data, info, time_):
     #def on_drag_data_received(self, context, x, y, selection_data, info, time_):
@@ -226,6 +227,8 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
         if self.is_focus():
             print('on_xref_clicked')
             w = XRefWin.get_instance()
+            model = self.notebook_app.get_project_treemodel()
+            w.set_model(model)
             #if not self.model:
             #    self.model = ImageModel() ???
             #w.set_model(self.model)

@@ -46,6 +46,7 @@ class NotebookApp(Gtk.Application):
         #self.projview.add(GtkSource.View())
         #self.projview.add(Gtk.TextView())
         self.projview.set_element_toolbar(self.builder.get_object('block_toolbar'))
+        self.projview.set_notebook_app(self)
 
         self.hpaned = self.builder.get_object("paned1")
         self.hpaned.set_position(200)
@@ -86,6 +87,9 @@ class NotebookApp(Gtk.Application):
             if (not docid) or (docid and docid == curid):
                 level = self.treestore.get_docid_level(docid)
                 self.projview.subdoc_set_title(curid, curtitle, level)
+
+    def get_project_treemodel(self):
+        return self.treestore
 
     def on_subdoc_inserted(self, projecttreeview, docid):
         #print('*** on_subdoc_inserted signal received, docid = ' + str(docid))

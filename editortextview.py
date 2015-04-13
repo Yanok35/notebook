@@ -50,12 +50,10 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
             toolbar.insert(cls.code_btn, -1)
 
         if cls.xref_btn is None:
-            #img = Gtk.Image.new_from_file("icons/block-del.svg")
-            #cls.xref_btn = Gtk.ToolButton()
-            #cls.xref_btn.set_icon_widget(img)
-            cls.xref_btn = Gtk.ToolButton.new_from_stock(Gtk.STOCK_EXECUTE)
+            cls.xref_btn = Gtk.ToolButton()
+            img = Gtk.Image.new_from_file("icons/xref-file-link.svg")
+            cls.xref_btn.set_icon_widget(img)
             cls.xref_btn.set_tooltip_text('Add a cross-reference in block')
-            cls.xref_btn.show_all()
             toolbar.insert(cls.xref_btn, -1)
 
         cls.bold_btn.connect('clicked', self.on_bold_button_clicked)
@@ -66,7 +64,7 @@ class EditorTextView(GtkSource.View, ElementBlockInterface):
 
     @classmethod
     def toobar_set_visible(cls, visible):
-        for w in [ cls.bold_btn, cls.ital_btn, cls.unde_btn, cls.code_btn ]:
+        for w in [ cls.bold_btn, cls.ital_btn, cls.unde_btn, cls.code_btn, cls.xref_btn ]:
             if visible:
                 w.show_all()
             else:

@@ -70,6 +70,8 @@ class AttribTextTag(Gtk.TextTag):
 class EditorTextBuffer(GtkSource.Buffer):
     __gtype_name__ = 'EditorTextBuffer'
 
+    _instances_with_attribtag = [] # For XRef retrieval by app
+
     def __init__(self):
         GtkSource.Buffer.__init__(self)
 
@@ -204,6 +206,8 @@ class EditorTextBuffer(GtkSource.Buffer):
             tagtable = self.get_tag_table()
             tagtable.add(tag)
             self.attr_tags_list.append(tag)
+            if not self in EditorTextBuffer._instances_with_attribtag:
+                EditorTextBuffer._instances_with_attribtag.append(self)
 
         # Unserialize text data
         serformat = self.register_deserialize_tagset()
@@ -254,6 +258,9 @@ class EditorTextBuffer(GtkSource.Buffer):
         self.insert(iter, u' ')
         iter.forward_char()
         self.insert_with_tags(iter, text, tag)
+        # Keep a ref of instance for xref update made by the app.
+        if not self in EditorTextBuffer._instances_with_attribtag:
+            EditorTextBuffer._instances_with_attribtag.append(self)
 
     def remove_text_from_selection(self):
         print("remove_text_from_selection")
@@ -278,4 +285,8 @@ class EditorTextBuffer(GtkSource.Buffer):
             # Remove tag from taglist:
             if in_tag and tag in self.attr_tags_list:
                 self.attr_tags_list.remove(tag)
+
+            # Unregister instance reference if no more AttribTextTag inside
+            if len(self.attr_tags_list) == 0:
+                EditorTextBuffer._instances_with_attribtag.remove(self)
 

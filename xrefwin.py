@@ -30,17 +30,20 @@ class XRefWin(Gtk.Window):
         self.treeview = self.builder.get_object('treeview_subdocs')
         self.treeview.expand_all()
 
-        column_title = ['Document name' ] #, 'DocID']
+        column_title = [ 'Id', 'Title' ]
+        column_rowid = [2, 0]
         for i in range(0, len(column_title)):
             renderer = Gtk.CellRendererText()
             #if i == 0:
             #    renderer.connect("edited", self.on_treeview_cell_edited)
             #    renderer.set_property("editable", True)
-            column = Gtk.TreeViewColumn(column_title[i], renderer, text=i)
+            column = Gtk.TreeViewColumn(column_title[i], renderer, text=column_rowid[i])
             self.treeview.append_column(column)
 
         self.treeview.show_all()
 
+        self.treeselection = self.treeview.get_selection()
+        self.treeselection.connect("changed", self.on_treeselection_changed)
         # Set the label preview to have a white background
         label_preview = self.builder.get_object('label_preview')
         label_preview.override_background_color(Gtk.StateFlags.NORMAL,
@@ -151,6 +154,25 @@ class XRefWin(Gtk.Window):
     #    x, y = self.model.get_image_coord()
     #    self.model.set_image_coord(val, y)
     #    pass
+
+    # Internal xrefs
+    def on_treeselection_changed(self, treesel):
+        #print("selection changed")
+        treeview = treesel.get_tree_view()
+        treestore = treeview.get_model()
+        store, sel_list = treesel.get_selected_rows()
+        if len(sel_list) == 1:
+            path = sel_list[0]
+            print(str(path))
+            iter = treestore.get_iter(path)
+            docid = int(treestore.get_value(iter, 1))
+            print("docid = ", docid)
+            print("level = ", treestore.get_docid_level(docid))
+            print("sect  = ", treestore.get_section_number_from_path(path))
+
+            tag = self.textmodel.create_xref_tag(docid, 0, # 0 = section title
+                                                 treestore.get_section_number_from_path(path))
+            self.xref = tag.tostring()
 
     # External links widgets
     def on_entry_link_url_changed(self, entry):

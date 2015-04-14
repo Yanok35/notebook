@@ -8,6 +8,7 @@ import sys, os
 from gi.repository import Gdk, Gio, Gtk, Pango
 
 import glade_custom_catalog
+from editortextbuffer import EditorTextBuffer
 from projecttreestore import ProjectTreeStore
 
 APP_TITLE = "Notebook"
@@ -95,6 +96,8 @@ class NotebookApp(Gtk.Application):
         #print('*** on_subdoc_inserted signal received, docid = ' + str(docid))
         self.projview.subdoc_new(docid)
         self.update_subdoc_title(docid)
+        self.treestore.subdoc_refresh_all_section_number()
+        EditorTextBuffer.refresh_all_instances_with_attribtag(self)
 
     def on_subdoc_deleted(self, projecttreeview, docid):
         #print('*** TODO: on_subdoc_deleted signal received, docid = ' + str(docid))
@@ -119,6 +122,7 @@ class NotebookApp(Gtk.Application):
     def on_subdoc_order_changed(self, projecttreeview):
         #print('*** on_subdoc_order_changed signal received')
         self.treestore.subdoc_refresh_all_section_number()
+        EditorTextBuffer.refresh_all_instances_with_attribtag(self)
         pass
 
     def on_subdoc_selection_changed(self, projecttreeview):

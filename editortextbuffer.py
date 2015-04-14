@@ -254,26 +254,35 @@ class EditorTextBuffer(GtkSource.Buffer):
         tag.set_attribute('href', url)
         return tag
 
+    def create_xref_tag(self, docid, mode, text):
+        tag_name = 'xref%d' % self.attr_tags_list_id
+        self.attr_tags_list_id += 1
+        tag = AttribTextTag(name = tag_name,
+            editable=False, background='lightgrey')
+        tag.set_attribute('docid', str(docid))
+        tag.set_attribute('mode', str(mode))
+        #if mode == 0:
+        tag.set_attribute('text', text) # embedded for DND only
+        return tag
+
     def insert_attribtag_at_iter(self, iter, text, tag):
         tagtable = self.get_tag_table()
         tagtable.add(tag)
         self.attr_tags_list.append(tag)
         self.attr_tags_list_id += 1
 
-        self.insert(iter, u' ')
-        iter.forward_char()
         self.insert_with_tags(iter, text, tag)
         # Keep a ref of instance for xref update made by the app.
         if not self in EditorTextBuffer._instances_with_attribtag:
             EditorTextBuffer._instances_with_attribtag.append(self)
 
     def remove_text_from_selection(self):
-        print("remove_text_from_selection")
+        #print("remove_text_from_selection")
         start, end = self.get_selection_bounds()
 
         # If user want to delete a xref or url, it must exactly select the tag
         # in textview, otherwise the event is cancelled
-        tag = False
+        in_tag = False
         can_delete = True
         for tag in self.attr_tags_list:
             if start.has_tag(tag):

@@ -304,3 +304,72 @@ class EditorTextBuffer(GtkSource.Buffer):
             if len(self.attr_tags_list) == 0:
                 EditorTextBuffer._instances_with_attribtag.remove(self)
 
+    def attribtag_find_in_buf(self, tag):
+        # return (start, end) iters if found, or... whatelse
+
+        start_iter = None
+        iter = self.get_start_iter()
+        end_iter = self.get_end_iter()
+
+        while iter.compare(end_iter) != 0:
+            if start_iter is None and iter.begins_tag(tag):
+                start_iter = iter.copy()
+
+            iter.forward_char()
+
+            if start_iter is not None and iter.ends_tag(tag):
+                end_iter = iter.copy()
+                break
+
+        #if end_iter is not None:
+        #    end_iter.backward_char()
+
+        return (start_iter, end_iter)
+
+    def attribtag_replace_in_buf(self, oldtag, newtag):
+        # We assume each tag name is unique, so replace could be done by
+        # finding the start and end pos, delete then insert again.
+        pass
+
+    def refresh_all_attribtag(self, notebook_app):
+        #print("*"*10, "refresh_all_attribtag", len(self.attr_tags_list))
+        treemodel = notebook_app.get_project_treemodel()
+
+        # loop on references instances of AttribTextTag in buf.
+        # (work on a copied list, since it will change during to loop itself)
+        local_attribtag_list = list(self.attr_tags_list)
+        for oldtag in local_attribtag_list:
+            if oldtag.get_property('name').startswith('xref'):
+                # 'oldtag' is a cross-reference, then we check if it need to be
+                # update
+                docid = int(oldtag.get_attribute('docid'))
+                mode = int(oldtag.get_attribute('mode'))
+                old_text = oldtag.get_attribute('text')
+
+                if mode == 0: # section number
+                    new_text = treemodel.get_section_number_from_docid(docid)
+                    if old_text == new_text:
+                        continue
+
+                # Update confirmed :
+                # 1. find text and tag position in buffer
+                start_iter, end_iter = self.attribtag_find_in_buf(oldtag)
+
+                # 2. remove text and tag, keep the internal attr_tags_list updated
+                self.delete(start_iter, end_iter)
+                self.attr_tags_list.remove(oldtag)
+                if len(self.attr_tags_list) == 0:
+                    EditorTextBuffer._instances_with_attribtag.remove(self)
+
+                # 3. create a new tag
+                newtag = self.create_xref_tag(docid, mode, new_text)
+
+                #self.remove_text_from_start_end_iters(start_iter, end_iter)
+                self.insert_attribtag_at_iter(start_iter, new_text, newtag)
+
+    @classmethod
+    def refresh_all_instances_with_attribtag(cls, notebook_app):
+        local_instance_list = list(cls._instances_with_attribtag)
+        for buf in local_instance_list:
+            cls.refresh_all_attribtag(buf, notebook_app)
+

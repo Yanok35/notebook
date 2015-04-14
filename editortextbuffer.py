@@ -103,6 +103,8 @@ class EditorTextBuffer(GtkSource.Buffer):
             size=20*Pango.SCALE)
 
         self.attr_tags_list = []
+        self.attr_tags_list_id = 0 # only increment(this is for tag name, and
+                                   # Gtk requires uniqueness on that
 
     def do_insert_text(self, pos, new_text, new_text_length):
         #print(pos, new_text)
@@ -206,6 +208,7 @@ class EditorTextBuffer(GtkSource.Buffer):
             tagtable = self.get_tag_table()
             tagtable.add(tag)
             self.attr_tags_list.append(tag)
+            self.attr_tags_list_id += 1
             if not self in EditorTextBuffer._instances_with_attribtag:
                 EditorTextBuffer._instances_with_attribtag.append(self)
 
@@ -243,7 +246,8 @@ class EditorTextBuffer(GtkSource.Buffer):
         self.insert_pixbuf(cur_iter, pixbuf)
 
     def create_url_tag(self, text, url):
-        tag_name = 'url%d' % len(self.attr_tags_list)
+        tag_name = 'url%d' % self.attr_tags_list_id
+        self.attr_tags_list_id += 1
         tag = AttribTextTag(name = tag_name,
             editable=False, background='lightgrey')
         tag.set_attribute('text', text) # embedded for DND only
@@ -254,6 +258,7 @@ class EditorTextBuffer(GtkSource.Buffer):
         tagtable = self.get_tag_table()
         tagtable.add(tag)
         self.attr_tags_list.append(tag)
+        self.attr_tags_list_id += 1
 
         self.insert(iter, u' ')
         iter.forward_char()

@@ -267,6 +267,34 @@ class ProjectTreeStore(Gtk.TreeStore):
         text = text[:-1]
         return text
 
+    def _rec_get_iter_from_docid(self, iter, docid):
+        iter_found = None
+        #path = self.treestore.get_path(iter)
+        if docid == self.treestore.get_value(iter, ProjectTreeStore.Column.DOCID):
+            iter_found = iter.copy()
+            return iter_found
+
+        for i in range(0, self.treestore.iter_n_children(iter)):
+            child = self.treestore.iter_nth_child(iter, i)
+            iter_found = self._rec_get_iter_from_docid(child, docid)
+            if iter_found is not None:
+                break
+        return iter_found
+
+    def get_iter_from_docid(self, docid):
+        iter = self.treestore.get_iter_first()
+        while iter is not None and self.treestore.iter_is_valid(iter):
+            iter_found = self._rec_get_iter_from_docid(iter, docid)
+            if iter_found is not None:
+                break
+            iter = self.treestore.iter_next(iter)
+
+        return iter_found
+
+    def get_section_number_from_docid(self, docid):
+        iter = self.get_iter_from_docid(docid)
+        return self.treestore.get_value(iter, ProjectTreeStore.Column.SECT)
+
     def subdoc_add_new(self, path, row_pos):
 
         #print ("add new doc at", str(path))

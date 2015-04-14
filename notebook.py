@@ -118,6 +118,7 @@ class NotebookApp(Gtk.Application):
 
     def on_subdoc_order_changed(self, projecttreeview):
         #print('*** on_subdoc_order_changed signal received')
+        self.treestore.subdoc_refresh_all_section_number()
         pass
 
     def on_subdoc_selection_changed(self, projecttreeview):

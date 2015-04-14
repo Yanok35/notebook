@@ -27,8 +27,14 @@ class ProjectTreeStore(Gtk.TreeStore):
         #str('export-to-html'): (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
+    class Column:
+        Types = [ GObject.TYPE_STRING, GObject.TYPE_INT, GObject.TYPE_STRING ]
+        TITLE = 0 # User entry: string of (sub)section title
+        DOCID = 1 # Generated : int of subdoc unique index
+        SECT  = 2 # Generated : string of (sub)section id (ie. "1.3")
+
     def __init__(self):
-        Gtk.TreeStore.__init__(self, GObject.TYPE_STRING, GObject.TYPE_INT)
+        Gtk.TreeStore.__init__(self, *ProjectTreeStore.Column.Types)
 
         self.treestore = self # FIXME : to remove after cleanup
         #self.sigid_row_inserted = self.treestore.connect("row-inserted", self.on_treemodel_row_inserted)
@@ -49,7 +55,9 @@ class ProjectTreeStore(Gtk.TreeStore):
         else:
             name = elem.text
         docid = int(elem.attrib["id"])
-        iter_elem = self.treestore.append(iter, [elem.text, docid])
+        iter_elem = self.treestore.append(iter, [elem.text, docid, ""])
+        sectname = self.treestore.get_section_number_from_path(self.treestore.get_path(iter_elem))
+        self.treestore.set_value(iter_elem, ProjectTreeStore.Column.SECT, sectname)
         #print (elem.text)
 
         # Create a new subdocument from file
@@ -109,8 +117,8 @@ class ProjectTreeStore(Gtk.TreeStore):
         return docid_list
 
     def _rec_treestore_get_docs(self, iter, elem, filesdir):
-        docname = unicode(self.treestore.get_value(iter, 0), encoding='utf-8')
-        docid = unicode(self.treestore.get_value(iter, 1))
+        docname = unicode(self.treestore.get_value(iter, ProjectTreeStore.Column.TITLE), encoding='utf-8')
+        docid = unicode(self.treestore.get_value(iter, ProjectTreeStore.Column.DOCID))
 
         node = etree.SubElement(elem, 'subdoc')
         node.text = docname
@@ -160,8 +168,8 @@ class ProjectTreeStore(Gtk.TreeStore):
         doc.write(outfile, pretty_print=True)
 
     def _rec_find_subdociter_from_id(self, iter, docid):
-        #docname = unicode(self.treestore.get_value(iter, 0), encoding='utf-8')
-        elem_docid = int(self.treestore.get_value(iter, 1))
+        #docname = unicode(self.treestore.get_value(iter, ProjectTreeStore.Column.TITLE), encoding='utf-8')
+        elem_docid = int(self.treestore.get_value(iter, ProjectTreeStore.Column.DOCID))
         if elem_docid == docid:
             return iter
 
@@ -188,8 +196,8 @@ class ProjectTreeStore(Gtk.TreeStore):
     def _rec_treestore_get_doc_list(self, iter):
         retlist = []
 
-        docname = unicode(self.treestore.get_value(iter, 0), encoding='utf-8')
-        docid = int(self.treestore.get_value(iter, 1))
+        docname = unicode(self.treestore.get_value(iter, ProjectTreeStore.Column.TITLE), encoding='utf-8')
+        docid = int(self.treestore.get_value(iter, ProjectTreeStore.Column.DOCID))
 
         retlist.append([docid, docname])
 
@@ -225,7 +233,7 @@ class ProjectTreeStore(Gtk.TreeStore):
 
     def _rec_get_docid_level(self, iter, docid):
 
-        curid = int(self.treestore.get_value(iter, 1))
+        curid = int(self.treestore.get_value(iter, ProjectTreeStore.Column.DOCID))
         if curid == docid:
             return self.treestore.iter_depth(iter)
 
@@ -250,6 +258,15 @@ class ProjectTreeStore(Gtk.TreeStore):
 
         return level
 
+    def get_section_number_from_path(self, path):
+        text = u''
+        tokens = str(path).split(':')
+        for t in tokens:
+            text += str(int(t) + 1)
+            text += u'.'
+        text = text[:-1]
+        return text
+
     def subdoc_add_new(self, path, row_pos):
 
         #print ("add new doc at", str(path))
@@ -263,19 +280,22 @@ class ProjectTreeStore(Gtk.TreeStore):
                 parent = self.treestore.get_iter(superpath)
 
         iter_new = self.treestore.insert(parent, row_pos+1)
+        path_new = self.treestore.get_path(iter_new)
 
         # Create a new subdocument
         docid = self._get_new_docid()
 
         # Add an entry in project's treeview
-        self.treestore.set_value(iter_new, 0, "<Write your title>")
-        self.treestore.set_value(iter_new, 1, docid)
+        self.treestore.set_value(iter_new, ProjectTreeStore.Column.TITLE, "<Write your title>")
+        self.treestore.set_value(iter_new, ProjectTreeStore.Column.DOCID, docid)
+        self.treestore.set_value(iter_new, ProjectTreeStore.Column.SECT,
+                                 self.treestore.get_section_number_from_path(path_new))
         self.emit('subdoc-inserted', docid)
 
     def subdoc_del(self, path):
         #print ("remove doc at", str(path))
         iter = self.treestore.get_iter(path)
-        docid = self.treestore.get_value(iter, 1)
+        docid = self.treestore.get_value(iter, ProjectTreeStore.Column.DOCID)
         self.treestore.remove(iter)
         self.emit('subdoc-deleted', docid)
         #self.emit('subdoc-changed', docid)
@@ -284,10 +304,27 @@ class ProjectTreeStore(Gtk.TreeStore):
 
     def subdoc_set_title(self, path, new_text):
         iter = self.treestore.get_iter(path)
-        self.treestore.set_value(iter, 0, new_text)
+        self.treestore.set_value(iter, ProjectTreeStore.Column.TITLE, new_text)
 
-        docid = int(self.treestore.get_value(iter, 1))
+        docid = int(self.treestore.get_value(iter, ProjectTreeStore.Column.DOCID))
         self.emit('subdoc-changed', docid)
+
+    def _rec_refresh_all_section_number(self, iter):
+
+        path = self.treestore.get_path(iter)
+        self.treestore.set_value(iter, ProjectTreeStore.Column.SECT,
+                                 self.treestore.get_section_number_from_path(path))
+
+        for i in range(0, self.treestore.iter_n_children(iter)):
+            child = self.treestore.iter_nth_child(iter, i)
+            self._rec_refresh_all_section_number(child)
+
+    def subdoc_refresh_all_section_number(self):
+
+        iter = self.treestore.get_iter_first()
+        while iter is not None and self.treestore.iter_is_valid(iter):
+            self._rec_refresh_all_section_number(iter)
+            iter = self.treestore.iter_next(iter)
 
     def do_treemodel_row_inserted(self, treemodel, path, iter):
         print ("row-inserted", str(path), iter)

@@ -56,7 +56,7 @@ class ProjectTreeView(Gtk.Box):
         self.current_sel_list = None
         self.sigid_treeselection_changed = self.treeselection.connect("changed", self.on_treeview_selection_changed)
 
-        column_title = ['Document name', 'DocID']
+        column_title = ['Document name', 'DocID', 'Sect']
         for i in range(0, len(column_title)):
             renderer = Gtk.CellRendererText()
             if i == 0:
@@ -118,7 +118,7 @@ class ProjectTreeView(Gtk.Box):
         if self.current_sel_list:
             for treepath in self.current_sel_list:
                 iter = self.treestore.get_iter(treepath)
-                docid = self.treestore.get_value(iter, 1)
+                docid = self.treestore.get_value(iter, ProjectTreeStore.Column.DOCID)
                 retlist.append(int(docid))
         return retlist
         #return self.current_sel_list
@@ -178,11 +178,12 @@ class ProjectTreeView(Gtk.Box):
         self.drag_treepath_begin = []
         for path in path_list:
             iter = self.treestore.get_iter(path)
-            docid = int(self.treestore.get_value(iter, 1))
+            docid = int(self.treestore.get_value(iter, ProjectTreeStore.Column.DOCID))
             self.drag_treepath_begin.append(docid)
 
     def on_treeview_drag_drop(self, widget, context, x, y, time):
         self.set_selection_list(self.drag_treepath_begin)
+        self.emit('subdoc-order-changed')
         return False
 
     def on_treeview_selection_changed(self, treesel):

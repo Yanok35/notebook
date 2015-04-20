@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
+# puce = u'•'
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
@@ -348,7 +349,7 @@ class EditorTextBuffer(GtkSource.Buffer):
 
                 if mode == 0: # section number
                     new_text = treemodel.get_section_number_from_docid(docid)
-                    if old_text == new_text:
+                    if new_text is None or old_text == new_text:
                         continue
 
                 # Update confirmed :

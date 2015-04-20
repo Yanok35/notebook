@@ -292,8 +292,11 @@ class ProjectTreeStore(Gtk.TreeStore):
         return iter_found
 
     def get_section_number_from_docid(self, docid):
+        retval = None
         iter = self.get_iter_from_docid(docid)
-        return self.treestore.get_value(iter, ProjectTreeStore.Column.SECT)
+        if iter:
+            retval = self.treestore.get_value(iter, ProjectTreeStore.Column.SECT)
+        return retval
 
     def subdoc_add_new(self, path, row_pos):
 

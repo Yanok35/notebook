@@ -117,6 +117,16 @@ class EditorTextBuffer(GtkSource.Buffer):
 
         return GtkSource.Buffer.do_insert_text(self, pos, new_text, new_text_length)
 
+    def do_mark_set(self, location, mark):
+        if mark.get_name() == 'insert':
+            #print('do_mark_set', location, mark.get_name())
+            # Run here when the cursor move ('insert' mark)
+            for tag in self.attr_tags_list:
+                if location.has_tag(tag):
+                    print ("todo: tag model to xref win : ", tag.get_property('name'))
+                    break
+        return GtkSource.Buffer.do_mark_set(self, location, mark)
+
     def _buf_internal_access(self, access):
         if access:
             self.begin_not_undoable_action()

@@ -269,9 +269,12 @@ class ProjectView(Gtk.Container):
         assert(self.elements_toolbar is None)
         self.elements_toolbar = toolbar
 
+    def set_notebook_app(self, app):
+        self.notebook_app = app
+
     def subdoc_new(self, docid):
         #print("subdoc_new:", docid)
-        subdoc = SubdocView(self.elements_toolbar)
+        subdoc = SubdocView(self.elements_toolbar, self.notebook_app)
         #subdoc.subdoc_append()
         subdoc.block_add_at_end()
         subdoc.__setattr__("docid", docid) # TODO: move this into constructor

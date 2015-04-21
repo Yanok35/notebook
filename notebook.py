@@ -8,6 +8,8 @@ import sys, os
 from gi.repository import Gdk, Gio, Gtk, Pango
 
 import glade_custom_catalog
+from editortextbuffer import EditorTextBuffer
+from projecttreestore import ProjectTreeStore
 
 APP_TITLE = "Notebook"
 
@@ -28,11 +30,13 @@ class NotebookApp(Gtk.Application):
         self.builder.connect_signals(self)
 
         self.projecttreeview = self.builder.get_object("projecttreeview1")
-        self.projecttreeview.connect('subdoc-inserted', self.on_subdoc_inserted)
-        self.projecttreeview.connect('subdoc-deleted', self.on_subdoc_deleted)
-        self.projecttreeview.connect('subdoc-changed', self.on_subdoc_changed)
-        self.projecttreeview.connect('subdoc-load-from-file', self.on_subdoc_load_from_file)
-        self.projecttreeview.connect('subdoc-save-to-file', self.on_subdoc_save_to_file)
+        self.treestore = ProjectTreeStore() #self.projecttreeview.get_model()
+        self.projecttreeview.set_model(self.treestore)
+        self.treestore.connect('subdoc-inserted', self.on_subdoc_inserted)
+        self.treestore.connect('subdoc-deleted', self.on_subdoc_deleted)
+        self.treestore.connect('subdoc-changed', self.on_subdoc_changed)
+        self.treestore.connect('subdoc-load-from-file', self.on_subdoc_load_from_file)
+        self.treestore.connect('subdoc-save-to-file', self.on_subdoc_save_to_file)
         self.projecttreeview.connect('subdoc-order-changed', self.on_subdoc_order_changed)
         self.projecttreeview.connect('subdoc-selection-changed', self.on_subdoc_selection_changed)
         self.projecttreeview.connect('project-export', self.on_project_export)
@@ -43,6 +47,7 @@ class NotebookApp(Gtk.Application):
         #self.projview.add(GtkSource.View())
         #self.projview.add(Gtk.TextView())
         self.projview.set_element_toolbar(self.builder.get_object('block_toolbar'))
+        self.projview.set_notebook_app(self)
 
         self.hpaned = self.builder.get_object("paned1")
         self.hpaned.set_position(200)
@@ -76,17 +81,23 @@ class NotebookApp(Gtk.Application):
             self.window.set_title(wintitle)
 
     def update_subdoc_title(self, docid = None):
-        doclist = self.projecttreeview.get_doc_list()
+        doclist = self.treestore.get_doc_list()
         for doc in doclist:
             curid = doc[0]
             curtitle = doc[1]
             if (not docid) or (docid and docid == curid):
-                level = self.projecttreeview.get_docid_level(docid)
+                level = self.treestore.get_docid_level(docid)
                 self.projview.subdoc_set_title(curid, curtitle, level)
+
+    def get_project_treemodel(self):
+        return self.treestore
 
     def on_subdoc_inserted(self, projecttreeview, docid):
         #print('*** on_subdoc_inserted signal received, docid = ' + str(docid))
         self.projview.subdoc_new(docid)
+        self.update_subdoc_title(docid)
+        self.treestore.subdoc_refresh_all_section_number()
+        EditorTextBuffer.refresh_all_instances_with_attribtag(self)
 
     def on_subdoc_deleted(self, projecttreeview, docid):
         #print('*** TODO: on_subdoc_deleted signal received, docid = ' + str(docid))
@@ -110,19 +121,25 @@ class NotebookApp(Gtk.Application):
 
     def on_subdoc_order_changed(self, projecttreeview):
         #print('*** on_subdoc_order_changed signal received')
+        self.treestore.subdoc_refresh_all_section_number()
+        EditorTextBuffer.refresh_all_instances_with_attribtag(self)
         pass
 
     def on_subdoc_selection_changed(self, projecttreeview):
         #print('*** on_subdoc_selection_changed signal received')
+        docids = projecttreeview.get_model().get_docid_list()
+        for docid in docids:
+            self.update_subdoc_title(docid)
+
         sel_list = projecttreeview.get_selection_list()
         #print(len(sel_list), sel_list)
         self.projview.subdoc_set_visible(sel_list)
 
     def on_project_export(self, projecttreeview):
         text = ""
-        docids = projecttreeview.get_docid_list()
+        docids = projecttreeview.get_model().get_docid_list()
         for docid in docids:
-            level = projecttreeview.get_docid_level(docid)
+            level = projecttreeview.get_model().get_docid_level(docid)
             text += self.projview.subdoc_get_content_as_text(docid, level)
         print text
         pass
@@ -134,19 +151,19 @@ class NotebookApp(Gtk.Application):
         x = _cm_to_pt(1.5)
         y = _cm_to_pt(1.5)
 
-        docids = projecttreeview.get_docid_list()
+        docids = projecttreeview.get_model().get_docid_list()
         for docid in docids:
-            level = projecttreeview.get_docid_level(docid)
+            level = projecttreeview.get_model().get_docid_level(docid)
             #print('level = ', level)
             w, h = self.projview.subdoc_render_to_pdf(docid, level, ctx, x, y)
             #print (w, h)
             y += h
 
     def on_project_export_to_html(self, projecttreeview):
-        docids = projecttreeview.get_docid_list()
+        docids = projecttreeview.get_model().get_docid_list()
         html = u'<html><body>\n'
         for docid in docids:
-            level = projecttreeview.get_docid_level(docid)
+            level = projecttreeview.get_model().get_docid_level(docid)
             html += self.projview.subdoc_export_to_html(docid, level)
 
         html += u'</body></html>\n'

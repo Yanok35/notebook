@@ -68,7 +68,7 @@ class SubdocView(Gtk.Container):
         self.sigid_block_combo_changed = \
         cls.block_change_combo.connect('changed', self.on_combo_block_changed)
 
-    def __init__(self, elements_toolbar):
+    def __init__(self, elements_toolbar, notebook_app):
         Gtk.Container.__init__(self)
 
         self.add_events(Gdk.EventMask.KEY_PRESS_MASK)
@@ -81,6 +81,7 @@ class SubdocView(Gtk.Container):
         self.set_border_width(10) # for debug only
 
         self.elements_toolbar = elements_toolbar
+        self.notebook_app = notebook_app
         assert(self.elements_toolbar is not None)
         SubdocView.toolbar_create(elements_toolbar, self)
 
@@ -287,7 +288,7 @@ class SubdocView(Gtk.Container):
         #print("_block_new:")
         if block_type == SubdocView.PARAGRAPH:
             buf = EditorTextBuffer()
-            widget = EditorTextView(self.elements_toolbar)
+            widget = EditorTextView(self.elements_toolbar, self.notebook_app)
             widget.set_buffer(buf)
             self.add(widget)
         elif block_type == SubdocView.IMAGE:

@@ -218,8 +218,18 @@ class EditorTextBuffer(GtkSource.Buffer):
             tag = AttribTextTag.fromstring(data)
             tagtable = self.get_tag_table()
             tagtable.add(tag)
+
+            # Recover id from its name
+            if tag.get_property('name').startswith('xref'):
+                tag_id = int(tag.get_property('name')[4:])
+            elif tag.get_property('name').startswith('url'):
+                tag_id = int(tag.get_property('name')[4:])
+            else:
+                raise NotImplementedError
+            if self.attr_tags_list_id <= tag_id:
+                self.attr_tags_list_id = tag_id + 1
             self.attr_tags_list.append(tag)
-            self.attr_tags_list_id += 1
+
             if not self in EditorTextBuffer._instances_with_attribtag:
                 EditorTextBuffer._instances_with_attribtag.append(self)
 
@@ -280,7 +290,6 @@ class EditorTextBuffer(GtkSource.Buffer):
         tagtable = self.get_tag_table()
         tagtable.add(tag)
         self.attr_tags_list.append(tag)
-        self.attr_tags_list_id += 1
 
         self.insert_with_tags(iter, text, tag)
         # Keep a ref of instance for xref update made by the app.

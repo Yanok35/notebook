@@ -409,6 +409,9 @@ class SubdocView(Gtk.Container):
             #child.get_pages_required_for_rendering(2100, 2970)
             w, h = child.draw_on_cairo_surface(ctx, x, y, 390, 60)
 
+            if child.get_content_as_text() == '':
+                h = 0
+
             y += h
             glob_h += h
 

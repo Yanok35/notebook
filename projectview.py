@@ -365,15 +365,34 @@ class ProjectView(Gtk.Container):
         return text
 
     def subdoc_render_to_pdf(self, docid, level, ctx, x, y):
+        child_label = self.childrens_title[docid]
+        label_w, natural = child_label.get_preferred_width()
+        label_h, natural = child_label.get_preferred_height()
+
         ctx.save()
         ctx.translate(x, y)
-        Gtk.Label.do_draw(self.childrens_title[docid], ctx)
+        Gtk.Label.do_draw(child_label, ctx)
         ctx.restore()
-        y += 50
+
+        y += label_h
+        y += 10 # margin between label and childrens
 
         w, h = self.childrens[docid].render_to_pdf(ctx, x, y)
 
-        return w, h + 50 + 30 # + size of Gtk.label... approx to 30
+        # Draw a line after subdoc title
+        ctx.save()
+        ctx.translate(x, y - 5) # margin between label and childrens / 2
+        ctx.set_line_width(1)
+        ctx.set_source_rgb(0, 0, 0) # black
+        ctx.rectangle(0, 0, w, 0)
+        ctx.stroke()
+        ctx.restore()
+
+        if h > 0:
+            h += 30 # margin (if subdoc contains at least one para)
+        h += 10 # margin between label and childrens
+
+        return w, h + label_h # + 30 # + size of Gtk.label... approx to 30
 
     def subdoc_export_to_html(self, docid, level):
         html = u'<h%d>' % (level+1)
